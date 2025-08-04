@@ -19,6 +19,7 @@ import static java.lang.foreign.MemorySegment.NULL;
 
 import static java.lang.foreign.ValueLayout.*;
 
+import static fr.kenlek.j4p.JObjectRefType.*;
 import static fr.kenlek.jpgen.api.ForeignUtils.SYSTEM_LINKER;
 import static fr.kenlek.jpgen.api.dynload.DowncallTransformer.PUBLIC_GROUP_TRANSFORMER;
 import static java.lang.foreign.SymbolLookup.libraryLookup;
@@ -681,25 +682,40 @@ public interface JavaNativeInterface
         return this.getCurrentJNIEnv(1, version);
     }
 
-    default GlobalReference findClass(JNIEnv env, Class<?> clazz)
+    default Reference localReference(JNIEnv env, MemorySegment value)
+    {
+        return new Reference(this, env, value, JNILocalRefType);
+    }
+
+    default Reference globalReference(JNIEnv env, MemorySegment value)
+    {
+        return new Reference(this, env, value, JNIGlobalRefType);
+    }
+
+    default Reference weakReference(JNIEnv env, MemorySegment value)
+    {
+        return new Reference(this, env, value, JNIWeakGlobalRefType);
+    }
+
+    default Reference findClass(JNIEnv env, Class<?> clazz)
     {
         try (Arena arena = Arena.ofConfined())
         {
             if (clazz.getClassLoader() == null)
             {
-                return new GlobalReference(this, env, this.FindClass(env, arena.allocateFrom(clazz.descriptorString())));
+                return globalReference(env, this.FindClass(env, arena.allocateFrom(clazz.descriptorString())));
             }
 
             try (
-                GlobalReference threadClass = this.findClass(env, Thread.class);
-                GlobalReference currentThread = new GlobalReference(this, env, this.CallStaticObjectMethodA(
+                Reference threadClass = this.findClass(env, Thread.class);
+                Reference currentThread = globalReference(env, this.CallStaticObjectMethodA(
                     env, threadClass.value, this.getStaticMethodID(env, threadClass.value, "currentThread", methodType(Thread.class)), NULL
                 ));
-                GlobalReference classLoader = new GlobalReference(this, env, this.CallObjectMethodA(
+                Reference classLoader = globalReference(env, this.CallObjectMethodA(
                     env, currentThread.value, this.getMethodID(env, threadClass.value, "getContextClassLoader", methodType(ClassLoader.class)), NULL
                 ));
-                GlobalReference classClass = this.findClass(env, Class.class);
-                GlobalReference className = new GlobalReference(this, env, this.NewStringUTF(env, arena.allocateFrom(clazz.getName())))
+                Reference classClass = this.findClass(env, Class.class);
+                Reference className = globalReference(env, this.NewStringUTF(env, arena.allocateFrom(clazz.getName())))
             )
             {
                 MemorySegment args = arena.allocate(JValue.LAYOUT, 3);
@@ -707,7 +723,7 @@ public interface JavaNativeInterface
                 JValue.getAtIndex(args, 1).z(false);
                 JValue.getAtIndex(args, 2).l(classLoader.value);
 
-                return new GlobalReference(this, env, this.CallStaticObjectMethodA(env, classClass.value, this.getStaticMethodID(
+                return globalReference(env, this.CallStaticObjectMethodA(env, classClass.value, this.getStaticMethodID(
                     env, classClass.value, "forName", methodType(Class.class, String.class, boolean.class, ClassLoader.class)
                 ), args));
             }

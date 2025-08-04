@@ -1,6 +1,6 @@
-import fr.kenlek.j4p.GlobalReference;
 import fr.kenlek.j4p.JNIEnv;
 import fr.kenlek.j4p.JavaNativeInterface;
+import fr.kenlek.j4p.Reference;
 
 import java.awt.Canvas;
 import java.lang.foreign.Arena;
@@ -24,11 +24,11 @@ public final class StaticCallTest
 
         System.out.println();
         try (
-            GlobalReference canvasClass = jni.findClass(env, Canvas.class);
-            GlobalReference canvas = new GlobalReference(jni, env, jni.NewObjectA(env, canvasClass.value, jni.getMethodID(env, canvasClass.value, "<init>", methodType(void.class)), NULL))
+            Reference canvasClass = jni.findClass(env, Canvas.class);
+            Reference canvas = jni.globalReference(env, jni.NewObjectA(env, canvasClass.value, jni.getMethodID(env, canvasClass.value, "<init>", methodType(void.class)), NULL))
         )
         {
-            System.out.println(canvas);
+            System.out.println(canvas.value);
         }
     }
 }
