@@ -1,1 +1,1 @@
-rootProject.name = "jni4panama"
+rootProject.name = "j4p"

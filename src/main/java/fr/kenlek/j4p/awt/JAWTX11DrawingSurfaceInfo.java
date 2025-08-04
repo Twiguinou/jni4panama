@@ -15,7 +15,7 @@ import static java.util.Objects.requireNonNull;
 
 public record JAWTX11DrawingSurfaceInfo(MemorySegment pointer) implements Addressable
 {
-    private static final ValueLayout XLIB_ID_LAYOUT = (ValueLayout) requireNonNull(
+    public static final ValueLayout XLIB_ID_LAYOUT = (ValueLayout) requireNonNull(
         SYSTEM_LINKER.canonicalLayouts().get("long"),
         "Unable to resolve xlib identifier memory layout."
     );

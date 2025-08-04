@@ -14,11 +14,13 @@ import java.lang.foreign.Linker;
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.SymbolLookup;
 import java.lang.invoke.MethodHandles;
+import java.nio.file.Path;
 
 import static fr.kenlek.jpgen.api.ForeignUtils.SYSTEM_LINKER;
 import static fr.kenlek.jpgen.api.dynload.DowncallTransformer.PUBLIC_GROUP_TRANSFORMER;
 import static java.lang.foreign.SymbolLookup.libraryLookup;
 import static java.lang.invoke.MethodType.methodType;
+import static java.util.Objects.requireNonNull;
 
 @Layout.Generic({
     @Layout.Case(target = JNIEnv.class, layout = @Layout(value = "LAYOUT", container = JNIEnv.class, referenced = true)),
@@ -48,7 +50,9 @@ public interface AWTNativeInterface
 
     static AWTNativeInterface load(Arena arena)
     {
-        return load(libraryLookup("jawt", arena), SYSTEM_LINKER);
+        String javaHome = requireNonNull(System.getProperty("java.home"), "Unable to resolve java.home system property.");
+        Path libraryPath = Path.of(javaHome).resolve("lib", System.mapLibraryName("jawt"));
+        return load(libraryLookup(libraryPath, arena), SYSTEM_LINKER);
     }
 
     private static DowncallTransformer makeCallArranger(Class<?> handleType)

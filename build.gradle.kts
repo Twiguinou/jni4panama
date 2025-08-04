@@ -3,7 +3,7 @@ plugins {
     id("io.deepmedia.tools.deployer") version "0.18.0"
 }
 
-group = "fr.kenlek.j4p"
+group = "fr.kenlek"
 version = "1.0.0"
 
 java {
