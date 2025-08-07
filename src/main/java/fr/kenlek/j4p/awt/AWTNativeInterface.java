@@ -1,6 +1,8 @@
 package fr.kenlek.j4p.awt;
 
 import fr.kenlek.j4p.JNIEnv;
+import fr.kenlek.j4p.JavaNativeInterface;
+import fr.kenlek.j4p.Reference;
 import fr.kenlek.jpgen.api.dynload.DowncallTransformer;
 import fr.kenlek.jpgen.api.dynload.Ignore;
 import fr.kenlek.jpgen.api.dynload.Layout;
@@ -41,6 +43,12 @@ public interface AWTNativeInterface
     int JAWT_VERSION_1_7 = 0x00010007;
     int JAWT_VERSION_9 = 0x00090000;
 
+    static SymbolLookup jawtLookup(Arena arena)
+    {
+        String javaHome = requireNonNull(System.getProperty("java.home"), "Unable to resolve java.home system property.");
+        return libraryLookup(Path.of(javaHome).resolve("lib", System.mapLibraryName("jawt")), arena);
+    }
+
     static AWTNativeInterface load(SymbolLookup lookup, Linker linker)
     {
         return NativeProxies.instantiate(AWTNativeInterface.class, new LinkingDowncallDispatcher(lookup, linker).compose(
@@ -48,11 +56,9 @@ public interface AWTNativeInterface
         ));
     }
 
-    static AWTNativeInterface load(Arena arena)
+    static AWTNativeInterface load(SymbolLookup jawtLookup, SymbolLookup j4pLookup)
     {
-        String javaHome = requireNonNull(System.getProperty("java.home"), "Unable to resolve java.home system property.");
-        Path libraryPath = Path.of(javaHome).resolve("lib", System.mapLibraryName("jawt"));
-        return load(libraryLookup(libraryPath, arena), SYSTEM_LINKER);
+        return load(jawtLookup.or(j4pLookup), SYSTEM_LINKER);
     }
 
     private static DowncallTransformer makeCallArranger(Class<?> handleType)
@@ -108,11 +114,21 @@ public interface AWTNativeInterface
     @Unbound
     void Unlock(@Ignore JAWT awt, JNIEnv env);
 
-    @Unbound
-    MemorySegment GetComponent(@Ignore JAWT awt, JNIEnv env, MemorySegment platformInfo);
+    @Redirect("j4p_awt_GetComponent")
+    MemorySegment _GetComponent(JAWT awt, JNIEnv env, MemorySegment platformInfo);
 
-    @Unbound
-    MemorySegment CreateEmbeddedFrame(@Ignore JAWT awt, JNIEnv env, MemorySegment platformInfo);
+    default Reference GetComponent(JavaNativeInterface jni, JAWT awt, JNIEnv env, MemorySegment platformInfo)
+    {
+        return jni.reference(env, this._GetComponent(awt, env, platformInfo));
+    }
+
+    @Redirect("j4p_awt_CreateEmbeddedFrame")
+    MemorySegment _CreateEmbeddedFrame(JAWT awt, JNIEnv env, MemorySegment platformInfo);
+
+    default Reference CreateEmbeddedFrame(JavaNativeInterface jni, JAWT awt, JNIEnv env, MemorySegment platformInfo)
+    {
+        return jni.reference(env, this._CreateEmbeddedFrame(awt, env, platformInfo));
+    }
 
     @Unbound
     void SetBounds(@Ignore JAWT awt, JNIEnv env, MemorySegment embeddedFrame, int x, int y, int w, int h);

@@ -1,5 +1,6 @@
 package fr.kenlek.j4p;
 
+import fr.kenlek.jpgen.api.Platform;
 import fr.kenlek.jpgen.api.dynload.DowncallTransformer;
 import fr.kenlek.jpgen.api.dynload.Layout;
 import fr.kenlek.jpgen.api.dynload.LinkingDowncallDispatcher;
@@ -7,6 +8,8 @@ import fr.kenlek.jpgen.api.dynload.NativeProxies;
 import fr.kenlek.jpgen.api.dynload.Redirect;
 import fr.kenlek.jpgen.api.dynload.Unbound;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.lang.foreign.Arena;
 import java.lang.foreign.Linker;
 import java.lang.foreign.MemorySegment;
@@ -19,8 +22,7 @@ import static java.lang.foreign.MemorySegment.NULL;
 
 import static java.lang.foreign.ValueLayout.*;
 
-import static fr.kenlek.j4p.JObjectRefType.*;
-import static fr.kenlek.jpgen.api.ForeignUtils.SYSTEM_LINKER;
+import static fr.kenlek.jpgen.api.ForeignUtils.*;
 import static fr.kenlek.jpgen.api.dynload.DowncallTransformer.PUBLIC_GROUP_TRANSFORMER;
 import static java.lang.foreign.SymbolLookup.libraryLookup;
 import static java.lang.invoke.MethodType.methodType;
@@ -55,6 +57,34 @@ public interface JavaNativeInterface
     int JNI_VERSION_21 = 0x00150000;
     int JNI_VERSION_24 = 0x00180000;
 
+    static SymbolLookup jvmLookup(Arena arena)
+    {
+        String javaHome = requireNonNull(System.getProperty("java.home"), "Unable to resolve java.home system property.");
+        return libraryLookup(Path.of(javaHome).resolve("lib", "server", System.mapLibraryName("jvm")), arena);
+    }
+
+    static SymbolLookup j4pLookup(Arena arena) throws IOException
+    {
+        String libraryPath = System.getProperty("j4p.library.path");
+        if (libraryPath != null)
+        {
+            return SymbolLookup.libraryLookup(Path.of(libraryPath), arena);
+        }
+
+        String libraryName = "j4p-" + Platform.CURRENT.code();
+        try
+        {
+            return libraryLookup(libraryName, arena);
+        }
+        catch (IllegalArgumentException _)
+        {
+            try (InputStream input = requireNonNull(JavaNativeInterface.class.getClassLoader().getResourceAsStream("natives/" + System.mapLibraryName(libraryName))))
+            {
+                return loadLookup(arena, input, "j4p");
+            }
+        }
+    }
+
     static JavaNativeInterface load(SymbolLookup lookup, Linker linker)
     {
         return NativeProxies.instantiate(JavaNativeInterface.class, new LinkingDowncallDispatcher(lookup, linker).compose(
@@ -62,11 +92,9 @@ public interface JavaNativeInterface
         ));
     }
 
-    static JavaNativeInterface load(Arena arena)
+    static JavaNativeInterface load(SymbolLookup jvmLookup, SymbolLookup j4pLookup) throws IOException
     {
-        String javaHome = requireNonNull(System.getProperty("java.home"), "Unable to resolve java.home system property.");
-        Path libraryPath = Path.of(javaHome).resolve("lib", System.mapLibraryName("java"));
-        return load(libraryLookup(libraryPath, arena), SYSTEM_LINKER);
+        return load(jvmLookup.or(j4pLookup), SYSTEM_LINKER);
     }
 
     private static DowncallTransformer makeCallArranger(Class<?> handleType, Class<?> functionsType)
@@ -111,26 +139,62 @@ public interface JavaNativeInterface
     @Redirect("JNI_OnUnload")
     void OnUnload(JavaVM vm, MemorySegment reserved);
 
+    default Reference reference(JNIEnv env, MemorySegment value)
+    {
+        return new Reference(this, env, value);
+    }
+
     @Unbound
     int GetVersion(JNIEnv env);
 
-    @Unbound
-    MemorySegment DefineClass(JNIEnv env, MemorySegment name, MemorySegment loader, MemorySegment buf, int len);
+    @Redirect("j4p_jni_DefineClass")
+    MemorySegment _DefineClass(JNIEnv env, MemorySegment name, MemorySegment loader, MemorySegment buf, int len);
 
-    @Unbound
-    MemorySegment FindClass(JNIEnv env, MemorySegment name);
+    default Reference DefineClass(JNIEnv env, MemorySegment name, MemorySegment loader, MemorySegment buf, int len)
+    {
+        return this.reference(env, this._DefineClass(env, name, loader, buf, len));
+    }
+
+    @Redirect("j4p_jni_FindClass")
+    MemorySegment _FindClass(JNIEnv env, MemorySegment name);
+
+    default Reference FindClass(JNIEnv env, MemorySegment name)
+    {
+        return this.reference(env, this._FindClass(env, name));
+    }
 
     @Unbound
     MemorySegment FromReflectedMethod(JNIEnv env, MemorySegment method);
 
     @Unbound
-    MemorySegment GetSuperclass(JNIEnv env, MemorySegment sub);
+    MemorySegment FromReflectedField(JNIEnv env, MemorySegment field);
+
+    @Redirect("j4p_jni_ToReflectedMethod")
+    MemorySegment _ToReflectedMethod(JNIEnv env, MemorySegment cls, MemorySegment methodID, boolean isStatic);
+
+    default Reference ToReflectedMethod(JNIEnv env, MemorySegment cls, MemorySegment methodID, boolean isStatic)
+    {
+        return this.reference(env, this._ToReflectedMethod(env, cls, methodID, isStatic));
+    }
+
+    @Redirect("j4p_jni_GetSuperclass")
+    MemorySegment _GetSuperclass(JNIEnv env, MemorySegment sub);
+
+    default Reference GetSuperclass(JNIEnv env, MemorySegment sub)
+    {
+        return this.reference(env, this._GetSuperclass(env, sub));
+    }
 
     @Unbound
     boolean IsAssignableFrom(JNIEnv env, MemorySegment sub, MemorySegment sup);
 
-    @Unbound
-    MemorySegment ToReflectedField(JNIEnv env, MemorySegment cls, MemorySegment fieldID, boolean isStatic);
+    @Redirect("j4p_jni_ToReflectedField")
+    MemorySegment _ToReflectedField(JNIEnv env, MemorySegment cls, MemorySegment fieldID, boolean isStatic);
+
+    default Reference ToReflectedField(JNIEnv env, MemorySegment cls, MemorySegment fieldID, boolean isStatic)
+    {
+        return this.reference(env, this._ToReflectedField(env, cls, fieldID, isStatic));
+    }
 
     @Unbound
     int Throw(JNIEnv env, MemorySegment obj);
@@ -138,8 +202,13 @@ public interface JavaNativeInterface
     @Unbound
     int ThrowNew(JNIEnv env, MemorySegment clazz, MemorySegment msg);
 
-    @Unbound
-    MemorySegment ExceptionOccurred(JNIEnv env);
+    @Redirect("j4p_jni_ExceptionOccurred")
+    MemorySegment _ExceptionOccurred(JNIEnv env);
+
+    default Reference ExceptionOccurred(JNIEnv env)
+    {
+        return this.reference(env, this._ExceptionOccurred(env));
+    }
 
     @Unbound
     void ExceptionDescribe(JNIEnv env);
@@ -174,14 +243,29 @@ public interface JavaNativeInterface
     @Unbound
     int EnsureLocalCapacity(JNIEnv env, int capacity);
 
-    @Unbound
-    MemorySegment AllocObject(JNIEnv env, MemorySegment clazz);
+    @Redirect("j4p_jni_AllocObject")
+    MemorySegment _AllocObject(JNIEnv env, MemorySegment clazz);
 
-    @Unbound
-    MemorySegment NewObjectA(JNIEnv env, MemorySegment clazz, MemorySegment methodID, MemorySegment args);
+    default Reference AllocObject(JNIEnv env, MemorySegment clazz)
+    {
+        return this.reference(env, this._AllocObject(env, clazz));
+    }
 
-    @Unbound
-    MemorySegment GetObjectClass(JNIEnv env, MemorySegment obj);
+    @Redirect("j4p_jni_NewObjectA")
+    MemorySegment _NewObjectA(JNIEnv env, MemorySegment clazz, MemorySegment methodID, MemorySegment args);
+
+    default Reference NewObjectA(JNIEnv env, MemorySegment clazz, MemorySegment methodID, MemorySegment args)
+    {
+        return this.reference(env, this._NewObjectA(env, clazz, methodID, args));
+    }
+
+    @Redirect("j4p_jni_GetObjectClass")
+    MemorySegment _GetObjectClass(JNIEnv env, MemorySegment obj);
+
+    default Reference GetObjectClass(JNIEnv env, MemorySegment obj)
+    {
+        return this.reference(env, this._GetObjectClass(env, obj));
+    }
 
     @Unbound
     boolean IsInstanceOf(JNIEnv env, MemorySegment obj, MemorySegment clazz);
@@ -189,8 +273,13 @@ public interface JavaNativeInterface
     @Unbound
     MemorySegment GetMethodID(JNIEnv env, MemorySegment clazz, MemorySegment name, MemorySegment sig);
 
-    @Unbound
-    MemorySegment CallObjectMethodA(JNIEnv env, MemorySegment obj, MemorySegment methodID, MemorySegment args);
+    @Redirect("j4p_jni_CallObjectMethodA")
+    MemorySegment _CallObjectMethodA(JNIEnv env, MemorySegment obj, MemorySegment methodID, MemorySegment args);
+
+    default Reference CallObjectMethodA(JNIEnv env, MemorySegment obj, MemorySegment methodID, MemorySegment args)
+    {
+        return this.reference(env, this._CallObjectMethodA(env, obj, methodID, args));
+    }
 
     @Unbound
     boolean CallBooleanMethodA(JNIEnv env, MemorySegment obj, MemorySegment methodID, MemorySegment args);
@@ -219,8 +308,13 @@ public interface JavaNativeInterface
     @Unbound
     void CallVoidMethodA(JNIEnv env, MemorySegment obj, MemorySegment methodID, MemorySegment args);
 
-    @Unbound
-    MemorySegment CallNonvirtualObjectMethodA(JNIEnv env, MemorySegment obj, MemorySegment clazz, MemorySegment methodID, MemorySegment args);
+    @Redirect("j4p_jni_CallNonvirtualObjectMethodA")
+    MemorySegment _CallNonvirtualObjectMethodA(JNIEnv env, MemorySegment obj, MemorySegment clazz, MemorySegment methodID, MemorySegment args);
+
+    default Reference CallNonvirtualObjectMethodA(JNIEnv env, MemorySegment obj, MemorySegment clazz, MemorySegment methodID, MemorySegment args)
+    {
+        return this.reference(env, this._CallNonvirtualObjectMethodA(env, obj, clazz, methodID, args));
+    }
 
     @Unbound
     boolean CallNonvirtualBooleanMethodA(JNIEnv env, MemorySegment obj, MemorySegment clazz, MemorySegment methodID, MemorySegment args);
@@ -252,8 +346,13 @@ public interface JavaNativeInterface
     @Unbound
     MemorySegment GetFieldID(JNIEnv env, MemorySegment clazz, MemorySegment name, MemorySegment sig);
 
-    @Unbound
-    MemorySegment GetObjectField(JNIEnv env, MemorySegment obj, MemorySegment fieldID);
+    @Redirect("j4p_jni_GetObjectField")
+    MemorySegment _GetObjectField(JNIEnv env, MemorySegment obj, MemorySegment fieldID);
+
+    default Reference GetObjectField(JNIEnv env, MemorySegment obj, MemorySegment fieldID)
+    {
+        return this.reference(env, this._GetObjectField(env, obj, fieldID));
+    }
 
     @Unbound
     boolean GetBooleanField(JNIEnv env, MemorySegment obj, MemorySegment fieldID);
@@ -309,8 +408,13 @@ public interface JavaNativeInterface
     @Unbound
     MemorySegment GetStaticMethodID(JNIEnv env, MemorySegment clazz, MemorySegment name, MemorySegment sig);
 
-    @Unbound
-    MemorySegment CallStaticObjectMethodA(JNIEnv env, MemorySegment clazz, MemorySegment methodID, MemorySegment args);
+    @Redirect("j4p_jni_CallStaticObjectMethodA")
+    MemorySegment _CallStaticObjectMethodA(JNIEnv env, MemorySegment clazz, MemorySegment methodID, MemorySegment args);
+
+    default Reference CallStaticObjectMethodA(JNIEnv env, MemorySegment clazz, MemorySegment methodID, MemorySegment args)
+    {
+        return this.reference(env, this._CallStaticObjectMethodA(env, clazz, methodID, args));
+    }
 
     @Unbound
     boolean CallStaticBooleanMethodA(JNIEnv env, MemorySegment clazz, MemorySegment methodID, MemorySegment args);
@@ -342,8 +446,13 @@ public interface JavaNativeInterface
     @Unbound
     MemorySegment GetStaticFieldID(JNIEnv env, MemorySegment clazz, MemorySegment name, MemorySegment sig);
 
-    @Unbound
-    MemorySegment GetStaticObjectField(JNIEnv env, MemorySegment clazz, MemorySegment fieldID);
+    @Redirect("j4p_jni_GetStaticObjectField")
+    MemorySegment _GetStaticObjectField(JNIEnv env, MemorySegment clazz, MemorySegment fieldID);
+
+    default Reference GetStaticObjectField(JNIEnv env, MemorySegment clazz, MemorySegment fieldID)
+    {
+        return this.reference(env, this._GetStaticObjectField(env, clazz, fieldID));
+    }
 
     @Unbound
     boolean GetStaticBooleanField(JNIEnv env, MemorySegment clazz, MemorySegment fieldID);
@@ -396,8 +505,13 @@ public interface JavaNativeInterface
     @Unbound
     void SetStaticDoubleField(JNIEnv env, MemorySegment clazz, MemorySegment fieldID, double value);
 
-    @Unbound
-    MemorySegment NewString(JNIEnv env, MemorySegment unicode, int len);
+    @Redirect("j4p_jni_NewString")
+    MemorySegment _NewString(JNIEnv env, MemorySegment unicode, int len);
+
+    default Reference NewString(JNIEnv env, MemorySegment unicode, int len)
+    {
+        return this.reference(env, this._NewString(env, unicode, len));
+    }
 
     @Unbound
     int GetStringLength(JNIEnv env, MemorySegment str);
@@ -408,8 +522,13 @@ public interface JavaNativeInterface
     @Unbound
     void ReleaseStringChars(JNIEnv env, MemorySegment str, MemorySegment chars);
 
-    @Unbound
-    MemorySegment NewStringUTF(JNIEnv env, MemorySegment utf);
+    @Redirect("j4p_jni_NewStringUTF")
+    MemorySegment _NewStringUTF(JNIEnv env, MemorySegment utf);
+
+    default Reference NewStringUTF(JNIEnv env, MemorySegment utf)
+    {
+        return this.reference(env, this._NewStringUTF(env, utf));
+    }
 
     @Unbound
     MemorySegment GetStringUTFLength(JNIEnv env, MemorySegment str);
@@ -423,38 +542,88 @@ public interface JavaNativeInterface
     @Unbound
     int GetArrayLength(JNIEnv env, MemorySegment array);
 
-    @Unbound
-    MemorySegment NewObjectArray(JNIEnv env, int len, MemorySegment clazz, MemorySegment init);
+    @Redirect("j4p_jni_NewObjectArray")
+    MemorySegment _NewObjectArray(JNIEnv env, int len, MemorySegment clazz, MemorySegment init);
 
-    @Unbound
-    MemorySegment GetObjectArrayElement(JNIEnv env, MemorySegment array, int index);
+    default Reference NewObjectArray(JNIEnv env, int len, MemorySegment clazz, MemorySegment init)
+    {
+        return this.reference(env, this._NewObjectArray(env, len, clazz, init));
+    }
+
+    @Redirect("j4p_jni_GetObjectArrayElement")
+    MemorySegment _GetObjectArrayElement(JNIEnv env, MemorySegment array, int index);
+
+    default Reference GetObjectArrayElement(JNIEnv env, MemorySegment array, int index)
+    {
+        return this.reference(env, this._GetObjectArrayElement(env, array, index));
+    }
 
     @Unbound
     void SetObjectArrayElement(JNIEnv env, MemorySegment array, int index, MemorySegment val);
 
-    @Unbound
-    MemorySegment NewBooleanArray(JNIEnv env, int len);
+    @Redirect("j4p_jni_NewBooleanArray")
+    MemorySegment _NewBooleanArray(JNIEnv env, int len);
 
-    @Unbound
-    MemorySegment NewByteArray(JNIEnv env, int len);
+    default Reference NewBooleanArray(JNIEnv env, int len)
+    {
+        return this.reference(env, this._NewBooleanArray(env, len));
+    }
 
-    @Unbound
-    MemorySegment NewCharArray(JNIEnv env, int len);
+    @Redirect("j4p_jni_NewByteArray")
+    MemorySegment _NewByteArray(JNIEnv env, int len);
 
-    @Unbound
-    MemorySegment NewShortArray(JNIEnv env, int len);
+    default Reference NewByteArray(JNIEnv env, int len)
+    {
+        return this.reference(env, this._NewByteArray(env, len));
+    }
 
-    @Unbound
-    MemorySegment NewIntArray(JNIEnv env, int len);
+    @Redirect("j4p_jni_NewCharArray")
+    MemorySegment _NewCharArray(JNIEnv env, int len);
 
-    @Unbound
-    MemorySegment NewLongArray(JNIEnv env, int len);
+    default Reference NewCharArray(JNIEnv env, int len)
+    {
+        return this.reference(env, this._NewCharArray(env, len));
+    }
 
-    @Unbound
-    MemorySegment NewFloatArray(JNIEnv env, int len);
+    @Redirect("j4p_jni_NewShortArray")
+    MemorySegment _NewShortArray(JNIEnv env, int len);
 
-    @Unbound
-    MemorySegment NewDoubleArray(JNIEnv env, int len);
+    default Reference NewShortArray(JNIEnv env, int len)
+    {
+        return this.reference(env, this._NewShortArray(env, len));
+    }
+
+    @Redirect("j4p_jni_NewIntArray")
+    MemorySegment _NewIntArray(JNIEnv env, int len);
+
+    default Reference NewIntArray(JNIEnv env, int len)
+    {
+        return this.reference(env, this._NewIntArray(env, len));
+    }
+
+    @Redirect("j4p_jni_NewLongArray")
+    MemorySegment _NewLongArray(JNIEnv env, int len);
+
+    default Reference NewLongArray(JNIEnv env, int len)
+    {
+        return this.reference(env, this._NewLongArray(env, len));
+    }
+
+    @Redirect("j4p_jni_NewFloatArray")
+    MemorySegment _NewFloatArray(JNIEnv env, int len);
+
+    default Reference NewFloatArray(JNIEnv env, int len)
+    {
+        return this.reference(env, this._NewFloatArray(env, len));
+    }
+
+    @Redirect("j4p_jni_NewDoubleArray")
+    MemorySegment _NewDoubleArray(JNIEnv env, int len);
+
+    default Reference NewDoubleArray(JNIEnv env, int len)
+    {
+        return this.reference(env, this._NewDoubleArray(env, len));
+    }
 
     @Unbound
     MemorySegment GetBooleanArrayElements(JNIEnv env, MemorySegment array, MemorySegment isCopy);
@@ -594,8 +763,13 @@ public interface JavaNativeInterface
     @Unbound
     boolean ExceptionCheck(JNIEnv env);
 
-    @Unbound
-    MemorySegment NewDirectByteBuffer(JNIEnv env, MemorySegment address, long capacity);
+    @Redirect("j4p_jni_NewDirectByteBuffer")
+    MemorySegment _NewDirectByteBuffer(JNIEnv env, MemorySegment address, long capacity);
+
+    default Reference NewDirectByteBuffer(JNIEnv env, MemorySegment address, long capacity)
+    {
+        return this.reference(env, this._NewDirectByteBuffer(env, address, capacity));
+    }
 
     @Unbound
     MemorySegment GetDirectBufferAddress(JNIEnv env, MemorySegment buf);
@@ -606,8 +780,13 @@ public interface JavaNativeInterface
     @Unbound
     int GetObjectRefType(JNIEnv env, MemorySegment obj);
 
-    @Unbound
-    MemorySegment GetModule(JNIEnv env, MemorySegment clazz);
+    @Redirect("j4p_jni_GetModule")
+    MemorySegment _GetModule(JNIEnv env, MemorySegment clazz);
+
+    default Reference GetModule(JNIEnv env, MemorySegment clazz)
+    {
+        return this.reference(env, this._GetModule(env, clazz));
+    }
 
     @Unbound
     boolean IsVirtualThread(JNIEnv env, MemorySegment obj);
@@ -682,40 +861,25 @@ public interface JavaNativeInterface
         return this.getCurrentJNIEnv(1, version);
     }
 
-    default Reference localReference(JNIEnv env, MemorySegment value)
-    {
-        return new Reference(this, env, value, JNILocalRefType);
-    }
-
-    default Reference globalReference(JNIEnv env, MemorySegment value)
-    {
-        return new Reference(this, env, value, JNIGlobalRefType);
-    }
-
-    default Reference weakReference(JNIEnv env, MemorySegment value)
-    {
-        return new Reference(this, env, value, JNIWeakGlobalRefType);
-    }
-
     default Reference findClass(JNIEnv env, Class<?> clazz)
     {
         try (Arena arena = Arena.ofConfined())
         {
             if (clazz.getClassLoader() == null)
             {
-                return globalReference(env, this.FindClass(env, arena.allocateFrom(clazz.descriptorString())));
+                return this.FindClass(env, arena.allocateFrom(clazz.descriptorString()));
             }
 
             try (
                 Reference threadClass = this.findClass(env, Thread.class);
-                Reference currentThread = globalReference(env, this.CallStaticObjectMethodA(
+                Reference currentThread = this.CallStaticObjectMethodA(
                     env, threadClass.value, this.getStaticMethodID(env, threadClass.value, "currentThread", methodType(Thread.class)), NULL
-                ));
-                Reference classLoader = globalReference(env, this.CallObjectMethodA(
+                );
+                Reference classLoader = this.CallObjectMethodA(
                     env, currentThread.value, this.getMethodID(env, threadClass.value, "getContextClassLoader", methodType(ClassLoader.class)), NULL
-                ));
+                );
                 Reference classClass = this.findClass(env, Class.class);
-                Reference className = globalReference(env, this.NewStringUTF(env, arena.allocateFrom(clazz.getName())))
+                Reference className = this.NewStringUTF(env, arena.allocateFrom(clazz.getName()))
             )
             {
                 MemorySegment args = arena.allocate(JValue.LAYOUT, 3);
@@ -723,9 +887,9 @@ public interface JavaNativeInterface
                 JValue.getAtIndex(args, 1).z(false);
                 JValue.getAtIndex(args, 2).l(classLoader.value);
 
-                return globalReference(env, this.CallStaticObjectMethodA(env, classClass.value, this.getStaticMethodID(
+                return this.CallStaticObjectMethodA(env, classClass.value, this.getStaticMethodID(
                     env, classClass.value, "forName", methodType(Class.class, String.class, boolean.class, ClassLoader.class)
-                ), args));
+                ), args);
             }
         }
     }
@@ -759,6 +923,41 @@ public interface JavaNativeInterface
         try (Arena arena = Arena.ofConfined())
         {
             return this.GetStaticFieldID(env, clazz, arena.allocateFrom(name), arena.allocateFrom(type.descriptorString()));
+        }
+    }
+
+    default Reference getNativeObject(JNIEnv env, Object object)
+    {
+        final class Container
+        {
+            static Object VALUE;
+        }
+
+        synchronized (Container.class)
+        {
+            Container.VALUE = object;
+            try (Reference clazz = this.findClass(env, Container.class))
+            {
+                return this.GetStaticObjectField(env, clazz.value, this.getStaticFieldID(env, clazz.value, "VALUE", Object.class));
+            }
+        }
+    }
+
+    default Object getJavaObject(JNIEnv env, MemorySegment object)
+    {
+        final class Container
+        {
+            static Object VALUE;
+        }
+
+        synchronized (Container.class)
+        {
+            try (Reference clazz = this.findClass(env, Container.class))
+            {
+                this.SetStaticObjectField(env, clazz.value, this.getStaticFieldID(env, clazz.value, "VALUE", Object.class), object);
+            }
+
+            return Container.VALUE;
         }
     }
 }
