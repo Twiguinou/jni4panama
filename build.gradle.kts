@@ -5,7 +5,7 @@ plugins {
     id("io.deepmedia.tools.deployer") version "0.18.0"
 }
 
-group = "fr.kenlek.j4p"
+group = "fr.kenlek"
 version = "1.0.0"
 
 java {
@@ -71,7 +71,7 @@ tasks.jar {
 
     from(fileTree(zigOut).files) {
         include("*.so", "*.dll", "*.dylib")
-        into("natives")
+        into("${project.group.toString().replace('.', '/')}/${project.name}/natives")
     }
 }
 
@@ -81,6 +81,8 @@ tasks.compileJava.configure {
 }
 
 tasks.withType<JavaExec>().configureEach {
+    dependsOn("compileNatives")
+
     jvmArgs("--enable-native-access=ALL-UNNAMED")
     systemProperty("j4p.library.path", zigOut.get().dir(
         if (Platform.OS.WINDOWS.isCurrent) "bin" else "lib"
@@ -89,7 +91,7 @@ tasks.withType<JavaExec>().configureEach {
 
 deployer {
     projectInfo {
-        name = project.name
+        name = "jni4panama"
         groupId = project.group.toString()
         artifactId = project.name
         url = "http://github.com/Twiguinou/jni4panama"

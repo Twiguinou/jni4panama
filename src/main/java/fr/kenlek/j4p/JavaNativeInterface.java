@@ -83,7 +83,7 @@ public interface JavaNativeInterface
         }
         catch (IllegalArgumentException _)
         {
-            try (InputStream input = requireNonNull(JavaNativeInterface.class.getClassLoader().getResourceAsStream("natives/" + System.mapLibraryName(libraryName))))
+            try (InputStream input = requireNonNull(JavaNativeInterface.class.getResourceAsStream("natives/" + System.mapLibraryName(libraryName))))
             {
                 return loadLookup(arena, input, "j4p");
             }
