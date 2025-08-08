@@ -1,5 +1,6 @@
 package fr.kenlek.j4p;
 
+import fr.kenlek.jpgen.api.Host;
 import fr.kenlek.jpgen.api.Platform;
 import fr.kenlek.jpgen.api.dynload.DowncallTransformer;
 import fr.kenlek.jpgen.api.dynload.Layout;
@@ -60,7 +61,11 @@ public interface JavaNativeInterface
     static SymbolLookup jvmLookup(Arena arena)
     {
         String javaHome = requireNonNull(System.getProperty("java.home"), "Unable to resolve java.home system property.");
-        return libraryLookup(Path.of(javaHome).resolve("lib", "server", System.mapLibraryName("jvm")), arena);
+        Path sharedLibrariesDirectory = Path.of(javaHome).resolve(Host.select(
+            Platform.OS.WINDOWS.value("bin"),
+            Host.ALL_TARGETS.value("lib")
+        ));
+        return libraryLookup(sharedLibrariesDirectory.resolve("server", System.mapLibraryName("jvm")), arena);
     }
 
     static SymbolLookup j4pLookup(Arena arena) throws IOException

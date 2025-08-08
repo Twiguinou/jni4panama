@@ -5,10 +5,7 @@ plugins {
     id("io.deepmedia.tools.deployer") version "0.18.0"
 }
 
-allprojects {
-    group = "fr.kenlek"
-}
-
+group = "fr.kenlek.j4p"
 version = "1.0.0"
 
 java {
