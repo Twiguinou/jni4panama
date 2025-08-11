@@ -25,12 +25,12 @@ dependencies {
     implementation("fr.kenlek.jpgen:jpgen-api:0.1.3")
 }
 
-val zig = providers.gradleProperty("j4p.zig").getOrElse("zig")
+val zig = providers.gradleProperty("${project.name}.zig").getOrElse("zig")
 val zigOut = layout.buildDirectory.dir("zig-out")
 val jniIncludeDirectory = layout.buildDirectory.dir("jni-include")
 
 tasks.register("downloadJNIHeaders") {
-    group = "j4p"
+    group = project.name
 
     val headers = listOf(
         Triple("https://raw.githubusercontent.com/openjdk/jdk/refs/heads/master/src/java.base/share/native/include/jni.h", ".", "jni.h"),
@@ -56,7 +56,7 @@ tasks.register("downloadJNIHeaders") {
 }
 
 tasks.register<Exec>("compileNatives") {
-    group = "j4p"
+    group = project.name
     dependsOn("downloadJNIHeaders")
 
     executable = zig
@@ -69,9 +69,9 @@ tasks.register<Exec>("compileNatives") {
 tasks.jar {
     dependsOn("compileNatives")
 
-    from(fileTree(zigOut).files) {
+    from(zigOut.map { fileTree(it).files }) {
         include("*.so", "*.dll", "*.dylib")
-        into("${project.group.toString().replace('.', '/')}/${project.name}/natives")
+        into("fr/kenlek/${project.name}/natives")
     }
 }
 
@@ -84,9 +84,9 @@ tasks.withType<JavaExec>().configureEach {
     dependsOn("compileNatives")
 
     jvmArgs("--enable-native-access=ALL-UNNAMED")
-    systemProperty("j4p.library.path", zigOut.get().dir(
+    systemProperty("${project.name}.library.path", zigOut.get().dir(
         if (Platform.OS.WINDOWS.isCurrent) "bin" else "lib"
-    ).file(System.mapLibraryName("j4p-${Platform.CURRENT.code()}")))
+    ).file(System.mapLibraryName("${project.name}-${Platform.CURRENT.code()}")))
 }
 
 deployer {
