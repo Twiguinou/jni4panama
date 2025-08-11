@@ -2,29 +2,24 @@ package fr.kenlek.j4p.awt;
 
 import fr.kenlek.jpgen.api.Addressable;
 import fr.kenlek.jpgen.api.dynload.Layout;
+import fr.kenlek.jpgen.api.types.CUnsignedLong;
 
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.SegmentAllocator;
 import java.lang.foreign.StructLayout;
-import java.lang.foreign.ValueLayout;
 
 import static java.lang.foreign.ValueLayout.*;
 
-import static fr.kenlek.jpgen.api.ForeignUtils.*;
-import static java.util.Objects.requireNonNull;
+import static fr.kenlek.jpgen.api.ForeignUtils.makeStructLayout;
 
 public record JAWTX11DrawingSurfaceInfo(MemorySegment pointer) implements Addressable
 {
-    public static final ValueLayout XLIB_ID_LAYOUT = (ValueLayout) requireNonNull(
-        SYSTEM_LINKER.canonicalLayouts().get("long"),
-        "Unable to resolve xlib identifier memory layout."
-    );
     @Layout.Value("LAYOUT")
     public static final StructLayout LAYOUT = makeStructLayout(
-        XLIB_ID_LAYOUT.withName("drawable"),
+        CUnsignedLong.LAYOUT.withName("drawable"),
         ADDRESS.withName("display"),
-        XLIB_ID_LAYOUT.withName("visualID"),
-        XLIB_ID_LAYOUT.withName("colormapID"),
+        CUnsignedLong.LAYOUT.withName("visualID"),
+        CUnsignedLong.LAYOUT.withName("colormapID"),
         JAVA_INT.withName("depth"),
         ADDRESS.withName("GetAWTColor")
     ).withName("JAWT_X11DrawingSurfaceInfo");
@@ -57,7 +52,17 @@ public record JAWTX11DrawingSurfaceInfo(MemorySegment pointer) implements Addres
 
     public MemorySegment $drawable()
     {
-        return this.pointer().asSlice(MEMBER_OFFSET__drawable, XLIB_ID_LAYOUT);
+        return this.pointer().asSlice(MEMBER_OFFSET__drawable, CUnsignedLong.LAYOUT);
+    }
+
+    public CUnsignedLong drawable()
+    {
+        return CUnsignedLong.wrap(this.$drawable());
+    }
+
+    public void drawable(CUnsignedLong value)
+    {
+        value.unwrap(this.$drawable());
     }
 
     public MemorySegment display()
@@ -77,12 +82,32 @@ public record JAWTX11DrawingSurfaceInfo(MemorySegment pointer) implements Addres
 
     public MemorySegment $visualID()
     {
-        return this.pointer().asSlice(MEMBER_OFFSET__visualID, XLIB_ID_LAYOUT);
+        return this.pointer().asSlice(MEMBER_OFFSET__visualID, CUnsignedLong.LAYOUT);
+    }
+
+    public CUnsignedLong visualID()
+    {
+        return CUnsignedLong.wrap(this.$visualID());
+    }
+
+    public void visualID(CUnsignedLong value)
+    {
+        value.unwrap(this.$visualID());
     }
 
     public MemorySegment $colormapID()
     {
-        return this.pointer().asSlice(MEMBER_OFFSET__colormapID, XLIB_ID_LAYOUT);
+        return this.pointer().asSlice(MEMBER_OFFSET__colormapID, CUnsignedLong.LAYOUT);
+    }
+
+    public CUnsignedLong colormapID()
+    {
+        return CUnsignedLong.wrap(this.$colormapID());
+    }
+
+    public void colormapID(CUnsignedLong value)
+    {
+        value.unwrap(this.$colormapID());
     }
 
     public int depth()

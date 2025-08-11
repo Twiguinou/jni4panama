@@ -6,7 +6,7 @@ plugins {
 }
 
 group = "fr.kenlek"
-version = "1.0.0"
+version = "1.0.1"
 
 java {
     sourceCompatibility = JavaVersion.VERSION_24
@@ -22,7 +22,7 @@ repositories {
 }
 
 dependencies {
-    implementation("fr.kenlek.jpgen:jpgen-api:0.1.2")
+    implementation("fr.kenlek.jpgen:jpgen-api:0.1.3")
 }
 
 val zig = providers.gradleProperty("j4p.zig").getOrElse("zig")

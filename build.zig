@@ -26,18 +26,10 @@ pub fn build(b: *std.Build) !void {
         .{ .cpu_arch = .aarch64, .os_tag = .macos },
 
         .{ .cpu_arch = .x86_64, .os_tag = .freebsd },
-        .{ .cpu_arch = .x86, .os_tag = .freebsd },
         .{ .cpu_arch = .aarch64, .os_tag = .freebsd },
-        .{ .cpu_arch = .arm, .os_tag = .freebsd },
-        .{ .cpu_arch = .powerpc64, .os_tag = .freebsd },
-        .{ .cpu_arch = .powerpc64le, .os_tag = .freebsd },
-        .{ .cpu_arch = .powerpc, .os_tag = .freebsd },
-        .{ .cpu_arch = .riscv64, .os_tag = .freebsd },
 
         .{ .cpu_arch = .x86_64, .os_tag = .netbsd },
-        .{ .cpu_arch = .x86, .os_tag = .netbsd },
-        .{ .cpu_arch = .aarch64, .os_tag = .netbsd },
-        .{ .cpu_arch = .arm, .os_tag = .netbsd }
+        .{ .cpu_arch = .aarch64, .os_tag = .netbsd }
     };
 
     const optimize = b.standardOptimizeOption(.{});
@@ -45,9 +37,11 @@ pub fn build(b: *std.Build) !void {
 
     for (targetQueries) |query| {
         const target = b.resolveTargetQuery(query);
-        const targetTriple = try target.query.zigTriple(b.allocator);
+        const arch_name = @tagName(target.query.cpu_arch.?);
+        const os_name = @tagName(target.query.os_tag.?);
+
         const libj4p = b.addLibrary(.{
-            .name = try std.fmt.allocPrint(b.allocator, "j4p-{s}", .{targetTriple}),
+            .name = try std.fmt.allocPrint(b.allocator, "j4p-{s}-{s}", .{ arch_name, os_name }),
             .linkage = .dynamic,
             .root_module = b.createModule(.{
                 .target = target,
@@ -58,10 +52,10 @@ pub fn build(b: *std.Build) !void {
 
         if (maybeJNIInclude) |jniInclude| {
             libj4p.addIncludePath(jniInclude);
-            libj4p.addIncludePath(switch (target.result.os.tag) {
-                .windows => jniInclude.path(b, "windows"),
-                else => jniInclude.path(b, "unix")
-            });
+            libj4p.addIncludePath(jniInclude.path(b, switch (target.result.os.tag) {
+                .windows => "windows",
+                else => "unix"
+            }));
         }
 
         libj4p.addCSourceFiles(.{

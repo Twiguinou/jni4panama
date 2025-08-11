@@ -43,6 +43,8 @@ public interface AWTNativeInterface
     int JAWT_VERSION_1_7 = 0x00010007;
     int JAWT_VERSION_9 = 0x00090000;
 
+    int JAWT_MACOSX_USE_CALAYER = 0x80000000;
+
     static SymbolLookup jawtLookup(Arena arena)
     {
         String javaHome = requireNonNull(System.getProperty("java.home"), "Unable to resolve java.home system property.");
