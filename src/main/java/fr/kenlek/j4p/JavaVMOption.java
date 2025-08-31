@@ -1,6 +1,7 @@
 package fr.kenlek.j4p;
 
 import fr.kenlek.jpgen.api.Addressable;
+import fr.kenlek.jpgen.api.Buffer;
 import fr.kenlek.jpgen.api.dynload.Layout;
 
 import java.lang.foreign.MemorySegment;
@@ -15,15 +16,33 @@ public record JavaVMOption(MemorySegment pointer) implements Addressable
 {
     @Layout.Value("LAYOUT")
     public static final StructLayout LAYOUT = makeStructLayout(
-        UNBOUNDED_POINTER.withName("optionString"),
+        ADDRESS.withName("optionString"),
         ADDRESS.withName("extraInfo")
     ).withName("JavaVMOption");
-    public static final long MEMBER_OFFSET__optionString = LAYOUT.byteOffset(PathElement.groupElement("optionString"));
-    public static final long MEMBER_OFFSET__extraInfo = LAYOUT.byteOffset(PathElement.groupElement("extraInfo"));
+    public static final long OFFSET__optionString = LAYOUT.byteOffset(PathElement.groupElement("optionString"));
+    public static final long OFFSET__extraInfo = LAYOUT.byteOffset(PathElement.groupElement("extraInfo"));
+
+    public JavaVMOption
+    {
+        if (pointer.maxByteAlignment() < LAYOUT.byteAlignment() || pointer.byteSize() != LAYOUT.byteSize())
+        {
+            throw new IllegalArgumentException("Memory slice does not follow layout constraints.");
+        }
+    }
 
     public JavaVMOption(SegmentAllocator allocator)
     {
         this(allocator.allocate(LAYOUT));
+    }
+
+    public static Buffer<JavaVMOption> buffer(MemorySegment data)
+    {
+        return Buffer.of(data, LAYOUT, JavaVMOption::new);
+    }
+
+    public static Buffer<JavaVMOption> allocate(SegmentAllocator allocator, long size)
+    {
+        return Buffer.allocate(allocator, LAYOUT, size, JavaVMOption::new);
     }
 
     public static JavaVMOption getAtIndex(MemorySegment buffer, long index)
@@ -43,31 +62,31 @@ public record JavaVMOption(MemorySegment pointer) implements Addressable
 
     public MemorySegment optionString()
     {
-        return this.pointer().get(UNBOUNDED_POINTER, MEMBER_OFFSET__optionString);
+        return this.pointer().get(UNBOUNDED_POINTER, OFFSET__optionString);
     }
 
     public void optionString(MemorySegment value)
     {
-        this.pointer().set(UNBOUNDED_POINTER, MEMBER_OFFSET__optionString, value);
+        this.pointer().set(ADDRESS, OFFSET__optionString, value);
     }
 
     public MemorySegment $optionString()
     {
-        return this.pointer().asSlice(MEMBER_OFFSET__optionString, UNBOUNDED_POINTER);
+        return this.pointer().asSlice(OFFSET__optionString, ADDRESS);
     }
 
     public MemorySegment extraInfo()
     {
-        return this.pointer().get(ADDRESS, MEMBER_OFFSET__extraInfo);
+        return this.pointer().get(ADDRESS, OFFSET__extraInfo);
     }
 
     public void extraInfo(MemorySegment value)
     {
-        this.pointer().set(ADDRESS, MEMBER_OFFSET__extraInfo, value);
+        this.pointer().set(ADDRESS, OFFSET__extraInfo, value);
     }
 
     public MemorySegment $extraInfo()
     {
-        return this.pointer().asSlice(MEMBER_OFFSET__extraInfo, ADDRESS);
+        return this.pointer().asSlice(OFFSET__extraInfo, ADDRESS);
     }
 }

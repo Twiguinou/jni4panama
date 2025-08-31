@@ -1,6 +1,7 @@
 package fr.kenlek.j4p.awt;
 
 import fr.kenlek.jpgen.api.Addressable;
+import fr.kenlek.jpgen.api.Buffer;
 import fr.kenlek.jpgen.api.dynload.Layout;
 
 import java.lang.foreign.MemorySegment;
@@ -24,15 +25,33 @@ public record JAWTWin32DrawingSurfaceInfo(MemorySegment pointer) implements Addr
         ADDRESS.withName("hdc"),
         ADDRESS.withName("hpalette")
     ).withName("JAWT_Win32DrawingSurfaceInfo");
-    public static final long MEMBER_OFFSET__hwnd = LAYOUT.byteOffset(PathElement.groupElement(0), PathElement.groupElement("hwnd"));
-    public static final long MEMBER_OFFSET__hbitmap = LAYOUT.byteOffset(PathElement.groupElement(0), PathElement.groupElement("hbitmap"));
-    public static final long MEMBER_OFFSET__pbits = LAYOUT.byteOffset(PathElement.groupElement(0), PathElement.groupElement("pbits"));
-    public static final long MEMBER_OFFSET__hdc = LAYOUT.byteOffset(PathElement.groupElement("hdc"));
-    public static final long MEMBER_OFFSET__hpalette = LAYOUT.byteOffset(PathElement.groupElement("hpalette"));
+    public static final long OFFSET__hwnd = LAYOUT.byteOffset(PathElement.groupElement(0), PathElement.groupElement("hwnd"));
+    public static final long OFFSET__hbitmap = LAYOUT.byteOffset(PathElement.groupElement(0), PathElement.groupElement("hbitmap"));
+    public static final long OFFSET__pbits = LAYOUT.byteOffset(PathElement.groupElement(0), PathElement.groupElement("pbits"));
+    public static final long OFFSET__hdc = LAYOUT.byteOffset(PathElement.groupElement("hdc"));
+    public static final long OFFSET__hpalette = LAYOUT.byteOffset(PathElement.groupElement("hpalette"));
+
+    public JAWTWin32DrawingSurfaceInfo
+    {
+        if (pointer.maxByteAlignment() < LAYOUT.byteAlignment() || pointer.byteSize() != LAYOUT.byteSize())
+        {
+            throw new IllegalArgumentException("Memory slice does not follow layout constraints.");
+        }
+    }
 
     public JAWTWin32DrawingSurfaceInfo(SegmentAllocator allocator)
     {
         this(allocator.allocate(LAYOUT));
+    }
+
+    public static Buffer<JAWTWin32DrawingSurfaceInfo> buffer(MemorySegment data)
+    {
+        return Buffer.of(data, LAYOUT, JAWTWin32DrawingSurfaceInfo::new);
+    }
+
+    public static Buffer<JAWTWin32DrawingSurfaceInfo> allocate(SegmentAllocator allocator, long size)
+    {
+        return Buffer.allocate(allocator, LAYOUT, size, JAWTWin32DrawingSurfaceInfo::new);
     }
 
     public static JAWTWin32DrawingSurfaceInfo getAtIndex(MemorySegment buffer, long index)
@@ -52,76 +71,76 @@ public record JAWTWin32DrawingSurfaceInfo(MemorySegment pointer) implements Addr
 
     public MemorySegment hwnd()
     {
-        return this.pointer().get(ADDRESS, MEMBER_OFFSET__hwnd);
+        return this.pointer().get(ADDRESS, OFFSET__hwnd);
     }
 
     public void hwnd(MemorySegment value)
     {
-        this.pointer().set(ADDRESS, MEMBER_OFFSET__hwnd, value);
+        this.pointer().set(ADDRESS, OFFSET__hwnd, value);
     }
 
     public MemorySegment $hwnd()
     {
-        return this.pointer().asSlice(MEMBER_OFFSET__hwnd, ADDRESS);
+        return this.pointer().asSlice(OFFSET__hwnd, ADDRESS);
     }
 
     public MemorySegment hbitmap()
     {
-        return this.pointer().get(ADDRESS, MEMBER_OFFSET__hbitmap);
+        return this.pointer().get(ADDRESS, OFFSET__hbitmap);
     }
 
     public void hbitmap(MemorySegment value)
     {
-        this.pointer().set(ADDRESS, MEMBER_OFFSET__hbitmap, value);
+        this.pointer().set(ADDRESS, OFFSET__hbitmap, value);
     }
 
     public MemorySegment $hbitmap()
     {
-        return this.pointer().asSlice(MEMBER_OFFSET__hbitmap, ADDRESS);
+        return this.pointer().asSlice(OFFSET__hbitmap, ADDRESS);
     }
 
     public MemorySegment pbits()
     {
-        return this.pointer().get(ADDRESS, MEMBER_OFFSET__pbits);
+        return this.pointer().get(ADDRESS, OFFSET__pbits);
     }
 
     public void pbits(MemorySegment value)
     {
-        this.pointer().set(ADDRESS, MEMBER_OFFSET__pbits, value);
+        this.pointer().set(ADDRESS, OFFSET__pbits, value);
     }
 
     public MemorySegment $pbits()
     {
-        return this.pointer().asSlice(MEMBER_OFFSET__pbits, ADDRESS);
+        return this.pointer().asSlice(OFFSET__pbits, ADDRESS);
     }
 
     public MemorySegment hdc()
     {
-        return this.pointer().get(ADDRESS, MEMBER_OFFSET__hdc);
+        return this.pointer().get(ADDRESS, OFFSET__hdc);
     }
 
     public void hdc(MemorySegment value)
     {
-        this.pointer().set(ADDRESS, MEMBER_OFFSET__hdc, value);
+        this.pointer().set(ADDRESS, OFFSET__hdc, value);
     }
 
     public MemorySegment $hdc()
     {
-        return this.pointer().asSlice(MEMBER_OFFSET__hdc, ADDRESS);
+        return this.pointer().asSlice(OFFSET__hdc, ADDRESS);
     }
 
     public MemorySegment hpalette()
     {
-        return this.pointer().get(ADDRESS, MEMBER_OFFSET__hpalette);
+        return this.pointer().get(ADDRESS, OFFSET__hpalette);
     }
 
     public void hpalette(MemorySegment value)
     {
-        this.pointer().set(ADDRESS, MEMBER_OFFSET__hpalette, value);
+        this.pointer().set(ADDRESS, OFFSET__hpalette, value);
     }
 
     public MemorySegment $hpalette()
     {
-        return this.pointer().asSlice(MEMBER_OFFSET__hpalette, ADDRESS);
+        return this.pointer().asSlice(OFFSET__hpalette, ADDRESS);
     }
 }

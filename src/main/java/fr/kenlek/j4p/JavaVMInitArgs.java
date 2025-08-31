@@ -1,6 +1,7 @@
 package fr.kenlek.j4p;
 
 import fr.kenlek.jpgen.api.Addressable;
+import fr.kenlek.jpgen.api.Buffer;
 import fr.kenlek.jpgen.api.dynload.Layout;
 
 import java.lang.foreign.MemorySegment;
@@ -10,7 +11,8 @@ import java.util.function.Consumer;
 
 import static java.lang.foreign.ValueLayout.*;
 
-import static fr.kenlek.jpgen.api.ForeignUtils.*;
+import static fr.kenlek.jpgen.api.ForeignUtils.makeStructLayout;
+import static java.lang.foreign.MemoryLayout.sequenceLayout;
 
 public record JavaVMInitArgs(MemorySegment pointer) implements Addressable
 {
@@ -18,17 +20,35 @@ public record JavaVMInitArgs(MemorySegment pointer) implements Addressable
     public static final StructLayout LAYOUT = makeStructLayout(
         JAVA_INT.withName("version"),
         JAVA_INT.withName("nOptions"),
-        UNBOUNDED_POINTER.withName("options"),
+        ADDRESS.withName("options"),
         JAVA_BOOLEAN.withName("ignoreUnrecognized")
     ).withName("JavaVMInitArgs");
-    public static final long MEMBER_OFFSET__version = LAYOUT.byteOffset(PathElement.groupElement("version"));
-    public static final long MEMBER_OFFSET__nOptions = LAYOUT.byteOffset(PathElement.groupElement("nOptions"));
-    public static final long MEMBER_OFFSET__options = LAYOUT.byteOffset(PathElement.groupElement("options"));
-    public static final long MEMBER_OFFSET__ignoreUnrecognized = LAYOUT.byteOffset(PathElement.groupElement("ignoreUnrecognized"));
+    public static final long OFFSET__version = LAYOUT.byteOffset(PathElement.groupElement("version"));
+    public static final long OFFSET__nOptions = LAYOUT.byteOffset(PathElement.groupElement("nOptions"));
+    public static final long OFFSET__options = LAYOUT.byteOffset(PathElement.groupElement("options"));
+    public static final long OFFSET__ignoreUnrecognized = LAYOUT.byteOffset(PathElement.groupElement("ignoreUnrecognized"));
+
+    public JavaVMInitArgs
+    {
+        if (pointer.maxByteAlignment() < LAYOUT.byteAlignment() || pointer.byteSize() != LAYOUT.byteSize())
+        {
+            throw new IllegalArgumentException("Memory slice does not follow layout constraints.");
+        }
+    }
 
     public JavaVMInitArgs(SegmentAllocator allocator)
     {
         this(allocator.allocate(LAYOUT));
+    }
+
+    public static Buffer<JavaVMInitArgs> buffer(MemorySegment data)
+    {
+        return Buffer.of(data, LAYOUT, JavaVMInitArgs::new);
+    }
+
+    public static Buffer<JavaVMInitArgs> allocate(SegmentAllocator allocator, long size)
+    {
+        return Buffer.allocate(allocator, LAYOUT, size, JavaVMInitArgs::new);
     }
 
     public static JavaVMInitArgs getAtIndex(MemorySegment buffer, long index)
@@ -48,76 +68,69 @@ public record JavaVMInitArgs(MemorySegment pointer) implements Addressable
 
     public int version()
     {
-        return this.pointer().get(JAVA_INT, MEMBER_OFFSET__version);
+        return this.pointer().get(JAVA_INT, OFFSET__version);
     }
 
     public void version(int value)
     {
-        this.pointer().set(JAVA_INT, MEMBER_OFFSET__version, value);
+        this.pointer().set(JAVA_INT, OFFSET__version, value);
     }
 
     public MemorySegment $version()
     {
-        return this.pointer().asSlice(MEMBER_OFFSET__version, JAVA_INT);
+        return this.pointer().asSlice(OFFSET__version, JAVA_INT);
     }
 
     public int nOptions()
     {
-        return this.pointer().get(JAVA_INT, MEMBER_OFFSET__nOptions);
+        return this.pointer().get(JAVA_INT, OFFSET__nOptions);
     }
 
     public void nOptions(int value)
     {
-        this.pointer().set(JAVA_INT, MEMBER_OFFSET__nOptions, value);
+        this.pointer().set(JAVA_INT, OFFSET__nOptions, value);
     }
 
     public MemorySegment $nOptions()
     {
-        return this.pointer().asSlice(MEMBER_OFFSET__nOptions, JAVA_INT);
+        return this.pointer().asSlice(OFFSET__nOptions, JAVA_INT);
     }
 
-    public MemorySegment options()
+    public Buffer<JavaVMOption> options()
     {
-        return this.pointer().get(UNBOUNDED_POINTER, MEMBER_OFFSET__options);
+        return JavaVMOption.buffer(this.pointer().get(
+            ADDRESS.withTargetLayout(sequenceLayout(this.nOptions(), JavaVMOption.LAYOUT)),
+            OFFSET__options
+        ));
     }
 
-    public JavaVMOption options(long index)
+    public void options(Consumer<Buffer<JavaVMOption>> consumer)
     {
-        return JavaVMOption.getAtIndex(this.options(), index);
+        consumer.accept(this.options());
     }
 
-    public void options(long index, Consumer<JavaVMOption> consumer)
+    public void options(Buffer<JavaVMOption> value)
     {
-        consumer.accept(this.options(index));
-    }
-
-    public void options(MemorySegment value)
-    {
-        this.pointer().set(UNBOUNDED_POINTER, MEMBER_OFFSET__options, value);
-    }
-
-    public void options(long index, JavaVMOption value)
-    {
-        JavaVMOption.setAtIndex(this.options(), index, value);
+        this.pointer().set(ADDRESS, OFFSET__options, value.pointer());
     }
 
     public MemorySegment $options()
     {
-        return this.pointer().asSlice(MEMBER_OFFSET__options, UNBOUNDED_POINTER);
+        return this.pointer().asSlice(OFFSET__options, ADDRESS);
     }
 
     public boolean ignoreUnrecognized()
     {
-        return this.pointer().get(JAVA_BOOLEAN, MEMBER_OFFSET__ignoreUnrecognized);
+        return this.pointer().get(JAVA_BOOLEAN, OFFSET__ignoreUnrecognized);
     }
 
     public void ignoreUnrecognized(boolean value)
     {
-        this.pointer().set(JAVA_BOOLEAN, MEMBER_OFFSET__ignoreUnrecognized, value);
+        this.pointer().set(JAVA_BOOLEAN, OFFSET__ignoreUnrecognized, value);
     }
 
     public MemorySegment $ignoreUnrecognized()
     {
-        return this.pointer().asSlice(MEMBER_OFFSET__ignoreUnrecognized, JAVA_BOOLEAN);
+        return this.pointer().asSlice(OFFSET__ignoreUnrecognized, JAVA_BOOLEAN);
     }
 }

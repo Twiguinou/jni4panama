@@ -1,6 +1,8 @@
 package fr.kenlek.j4p.awt;
 
+import fr.kenlek.j4p.JavaVMOption;
 import fr.kenlek.jpgen.api.Addressable;
+import fr.kenlek.jpgen.api.Buffer;
 import fr.kenlek.jpgen.api.dynload.Layout;
 
 import java.lang.foreign.MemorySegment;
@@ -10,7 +12,8 @@ import java.util.function.Consumer;
 
 import static java.lang.foreign.ValueLayout.*;
 
-import static fr.kenlek.jpgen.api.ForeignUtils.*;
+import static fr.kenlek.jpgen.api.ForeignUtils.makeStructLayout;
+import static java.lang.foreign.MemoryLayout.sequenceLayout;
 
 public record JAWTDrawingSurfaceInfo(MemorySegment pointer) implements Addressable
 {
@@ -20,17 +23,35 @@ public record JAWTDrawingSurfaceInfo(MemorySegment pointer) implements Addressab
         ADDRESS.withName("ds"),
         JAWTRectangle.LAYOUT.withName("bounds"),
         JAVA_INT.withName("clipSize"),
-        UNBOUNDED_POINTER.withName("clip")
+        ADDRESS.withName("clip")
     ).withName("JAWT_DrawingSurfaceInfo");
-    public static final long MEMBER_OFFSET__platformInfo = LAYOUT.byteOffset(PathElement.groupElement("platformInfo"));
-    public static final long MEMBER_OFFSET__ds = LAYOUT.byteOffset(PathElement.groupElement("ds"));
-    public static final long MEMBER_OFFSET__bounds = LAYOUT.byteOffset(PathElement.groupElement("bounds"));
-    public static final long MEMBER_OFFSET__clipSize = LAYOUT.byteOffset(PathElement.groupElement("clipSize"));
-    public static final long MEMBER_OFFSET__clip = LAYOUT.byteOffset(PathElement.groupElement("clip"));
+    public static final long OFFSET__platformInfo = LAYOUT.byteOffset(PathElement.groupElement("platformInfo"));
+    public static final long OFFSET__ds = LAYOUT.byteOffset(PathElement.groupElement("ds"));
+    public static final long OFFSET__bounds = LAYOUT.byteOffset(PathElement.groupElement("bounds"));
+    public static final long OFFSET__clipSize = LAYOUT.byteOffset(PathElement.groupElement("clipSize"));
+    public static final long OFFSET__clip = LAYOUT.byteOffset(PathElement.groupElement("clip"));
+
+    public JAWTDrawingSurfaceInfo
+    {
+        if (pointer.maxByteAlignment() < LAYOUT.byteAlignment() || pointer.byteSize() != LAYOUT.byteSize())
+        {
+            throw new IllegalArgumentException("Memory slice does not follow layout constraints.");
+        }
+    }
 
     public JAWTDrawingSurfaceInfo(SegmentAllocator allocator)
     {
         this(allocator.allocate(LAYOUT));
+    }
+
+    public static Buffer<JAWTDrawingSurfaceInfo> buffer(MemorySegment data)
+    {
+        return Buffer.of(data, LAYOUT, JAWTDrawingSurfaceInfo::new);
+    }
+
+    public static Buffer<JAWTDrawingSurfaceInfo> allocate(SegmentAllocator allocator, long size)
+    {
+        return Buffer.allocate(allocator, LAYOUT, size, JAWTDrawingSurfaceInfo::new);
     }
 
     public static JAWTDrawingSurfaceInfo getAtIndex(MemorySegment buffer, long index)
@@ -50,37 +71,37 @@ public record JAWTDrawingSurfaceInfo(MemorySegment pointer) implements Addressab
 
     public MemorySegment platformInfo()
     {
-        return this.pointer().get(ADDRESS, MEMBER_OFFSET__platformInfo);
+        return this.pointer().get(ADDRESS, OFFSET__platformInfo);
     }
 
     public void platformInfo(MemorySegment value)
     {
-        this.pointer().set(ADDRESS, MEMBER_OFFSET__platformInfo, value);
+        this.pointer().set(ADDRESS, OFFSET__platformInfo, value);
     }
 
     public MemorySegment $platformInfo()
     {
-        return this.pointer().asSlice(MEMBER_OFFSET__platformInfo, ADDRESS);
+        return this.pointer().asSlice(OFFSET__platformInfo, ADDRESS);
     }
 
     public JAWTDrawingSurface ds()
     {
-        return new JAWTDrawingSurface(this.pointer().get(ADDRESS, MEMBER_OFFSET__ds).reinterpret(JAWTDrawingSurface.LAYOUT.byteSize()));
+        return new JAWTDrawingSurface(this.pointer().get(ADDRESS.withTargetLayout(JAWTDrawingSurface.LAYOUT), OFFSET__ds));
     }
 
     public void ds(JAWTDrawingSurface value)
     {
-        this.pointer().set(ADDRESS, MEMBER_OFFSET__ds, value.pointer());
+        this.pointer().set(ADDRESS, OFFSET__ds, value.pointer());
     }
 
     public MemorySegment $ds()
     {
-        return this.pointer().asSlice(MEMBER_OFFSET__ds, ADDRESS);
+        return this.pointer().asSlice(OFFSET__ds, ADDRESS);
     }
 
     public JAWTRectangle bounds()
     {
-        return new JAWTRectangle(this.pointer().asSlice(MEMBER_OFFSET__bounds, JAWTRectangle.LAYOUT));
+        return new JAWTRectangle(this.pointer().asSlice(OFFSET__bounds, JAWTRectangle.LAYOUT));
     }
 
     public void bounds(Consumer<JAWTRectangle> consumer)
@@ -88,53 +109,41 @@ public record JAWTDrawingSurfaceInfo(MemorySegment pointer) implements Addressab
         consumer.accept(this.bounds());
     }
 
-    public void bounds(JAWTRectangle value)
-    {
-        MemorySegment.copy(value.pointer(), 0, this.pointer(), MEMBER_OFFSET__bounds, JAWTRectangle.LAYOUT.byteSize());
-    }
-
     public int clipSize()
     {
-        return this.pointer().get(JAVA_INT, MEMBER_OFFSET__clipSize);
+        return this.pointer().get(JAVA_INT, OFFSET__clipSize);
     }
 
     public void clipSize(int value)
     {
-        this.pointer().set(JAVA_INT, MEMBER_OFFSET__clipSize, value);
+        this.pointer().set(JAVA_INT, OFFSET__clipSize, value);
     }
 
     public MemorySegment $clipSize()
     {
-        return this.pointer().asSlice(MEMBER_OFFSET__clipSize, JAVA_INT);
+        return this.pointer().asSlice(OFFSET__clipSize, JAVA_INT);
     }
 
-    public MemorySegment clip()
+    public Buffer<JavaVMOption> clip()
     {
-        return this.pointer().get(UNBOUNDED_POINTER, MEMBER_OFFSET__clip);
+        return JavaVMOption.buffer(this.pointer().get(
+            ADDRESS.withTargetLayout(sequenceLayout(this.clipSize(), JavaVMOption.LAYOUT)),
+            OFFSET__clip
+        ));
     }
 
-    public JAWTRectangle clip(long index)
+    public void clip(Consumer<Buffer<JavaVMOption>> consumer)
     {
-        return JAWTRectangle.getAtIndex(this.clip(), index);
+        consumer.accept(this.clip());
     }
 
-    public void clip(long index, Consumer<JAWTRectangle> consumer)
+    public void clip(Buffer<JavaVMOption> value)
     {
-        consumer.accept(this.clip(index));
-    }
-
-    public void clip(MemorySegment value)
-    {
-        this.pointer().set(UNBOUNDED_POINTER, MEMBER_OFFSET__clip, value);
-    }
-
-    public void clip(long index, JAWTRectangle value)
-    {
-        JAWTRectangle.setAtIndex(this.clip(), index, value);
+        this.pointer().set(ADDRESS, OFFSET__clip, value.pointer());
     }
 
     public MemorySegment $clip()
     {
-        return this.pointer().asSlice(MEMBER_OFFSET__clip, UNBOUNDED_POINTER);
+        return this.pointer().asSlice(OFFSET__clip, ADDRESS);
     }
 }

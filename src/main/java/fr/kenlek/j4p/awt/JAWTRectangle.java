@@ -1,6 +1,7 @@
 package fr.kenlek.j4p.awt;
 
 import fr.kenlek.jpgen.api.Addressable;
+import fr.kenlek.jpgen.api.Buffer;
 import fr.kenlek.jpgen.api.dynload.Layout;
 
 import java.lang.foreign.MemorySegment;
@@ -20,14 +21,32 @@ public record JAWTRectangle(MemorySegment pointer) implements Addressable
         JAVA_INT.withName("width"),
         JAVA_INT.withName("height")
     ).withName("JAWT_Rectangle");
-    public static final long MEMBER_OFFSET__x = LAYOUT.byteOffset(PathElement.groupElement("x"));
-    public static final long MEMBER_OFFSET__y = LAYOUT.byteOffset(PathElement.groupElement("y"));
-    public static final long MEMBER_OFFSET__width = LAYOUT.byteOffset(PathElement.groupElement("width"));
-    public static final long MEMBER_OFFSET__height = LAYOUT.byteOffset(PathElement.groupElement("height"));
+    public static final long OFFSET__x = LAYOUT.byteOffset(PathElement.groupElement("x"));
+    public static final long OFFSET__y = LAYOUT.byteOffset(PathElement.groupElement("y"));
+    public static final long OFFSET__width = LAYOUT.byteOffset(PathElement.groupElement("width"));
+    public static final long OFFSET__height = LAYOUT.byteOffset(PathElement.groupElement("height"));
+
+    public JAWTRectangle
+    {
+        if (pointer.maxByteAlignment() < LAYOUT.byteAlignment() || pointer.byteSize() != LAYOUT.byteSize())
+        {
+            throw new IllegalArgumentException("Memory slice does not follow layout constraints.");
+        }
+    }
 
     public JAWTRectangle(SegmentAllocator allocator)
     {
         this(allocator.allocate(LAYOUT));
+    }
+
+    public static Buffer<JAWTRectangle> buffer(MemorySegment data)
+    {
+        return Buffer.of(data, LAYOUT, JAWTRectangle::new);
+    }
+
+    public static Buffer<JAWTRectangle> allocate(SegmentAllocator allocator, long size)
+    {
+        return Buffer.allocate(allocator, LAYOUT, size, JAWTRectangle::new);
     }
 
     public static JAWTRectangle getAtIndex(MemorySegment buffer, long index)
@@ -47,61 +66,61 @@ public record JAWTRectangle(MemorySegment pointer) implements Addressable
 
     public int x()
     {
-        return this.pointer().get(JAVA_INT, MEMBER_OFFSET__x);
+        return this.pointer().get(JAVA_INT, OFFSET__x);
     }
 
     public void x(int value)
     {
-        this.pointer().set(JAVA_INT, MEMBER_OFFSET__x, value);
+        this.pointer().set(JAVA_INT, OFFSET__x, value);
     }
 
     public MemorySegment $x()
     {
-        return this.pointer().asSlice(MEMBER_OFFSET__x, JAVA_INT);
+        return this.pointer().asSlice(OFFSET__x, JAVA_INT);
     }
 
     public int y()
     {
-        return this.pointer().get(JAVA_INT, MEMBER_OFFSET__y);
+        return this.pointer().get(JAVA_INT, OFFSET__y);
     }
 
     public void y(int value)
     {
-        this.pointer().set(JAVA_INT, MEMBER_OFFSET__y, value);
+        this.pointer().set(JAVA_INT, OFFSET__y, value);
     }
 
     public MemorySegment $y()
     {
-        return this.pointer().asSlice(MEMBER_OFFSET__y, JAVA_INT);
+        return this.pointer().asSlice(OFFSET__y, JAVA_INT);
     }
 
     public int width()
     {
-        return this.pointer().get(JAVA_INT, MEMBER_OFFSET__width);
+        return this.pointer().get(JAVA_INT, OFFSET__width);
     }
 
     public void width(int value)
     {
-        this.pointer().set(JAVA_INT, MEMBER_OFFSET__width, value);
+        this.pointer().set(JAVA_INT, OFFSET__width, value);
     }
 
     public MemorySegment $width()
     {
-        return this.pointer().asSlice(MEMBER_OFFSET__width, JAVA_INT);
+        return this.pointer().asSlice(OFFSET__width, JAVA_INT);
     }
 
     public int height()
     {
-        return this.pointer().get(JAVA_INT, MEMBER_OFFSET__height);
+        return this.pointer().get(JAVA_INT, OFFSET__height);
     }
 
     public void height(int value)
     {
-        this.pointer().set(JAVA_INT, MEMBER_OFFSET__height, value);
+        this.pointer().set(JAVA_INT, OFFSET__height, value);
     }
 
     public MemorySegment $height()
     {
-        return this.pointer().asSlice(MEMBER_OFFSET__height, JAVA_INT);
+        return this.pointer().asSlice(OFFSET__height, JAVA_INT);
     }
 }

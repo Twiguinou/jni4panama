@@ -1,5 +1,6 @@
 package fr.kenlek.j4p;
 
+import fr.kenlek.jpgen.api.Buffer;
 import fr.kenlek.jpgen.api.Host;
 import fr.kenlek.jpgen.api.Platform;
 import fr.kenlek.jpgen.api.dynload.DowncallTransformer;
@@ -97,7 +98,7 @@ public interface JavaNativeInterface
         ));
     }
 
-    static JavaNativeInterface load(SymbolLookup jvmLookup, SymbolLookup j4pLookup) throws IOException
+    static JavaNativeInterface load(SymbolLookup jvmLookup, SymbolLookup j4pLookup)
     {
         return load(jvmLookup.or(j4pLookup), SYSTEM_LINKER);
     }
@@ -841,7 +842,7 @@ public interface JavaNativeInterface
             MemorySegment pEnv = arena.allocate(ADDRESS);
             for (int i = 0; i < vmCount; i++)
             {
-                JavaVM vm = new JavaVM(pVMs.getAtIndex(ADDRESS, i).reinterpret(JavaVM.LAYOUT.byteSize()));
+                JavaVM vm = new JavaVM(pVMs.getAtIndex(ADDRESS.withTargetLayout(JavaVM.LAYOUT), i));
 
                 result = this.GetEnv(vm, pEnv, version);
                 if (result == JNI_EVERSION)
@@ -854,7 +855,7 @@ public interface JavaNativeInterface
                     continue;
                 }
 
-                return new JNIEnv(pEnv.get(ADDRESS, 0).reinterpret(JNIEnv.LAYOUT.byteSize()));
+                return new JNIEnv(pEnv.get(ADDRESS.withTargetLayout(JNIEnv.LAYOUT), 0));
             }
 
             throw new RuntimeException("No Java VM could be tied to the current thread.");
@@ -887,14 +888,14 @@ public interface JavaNativeInterface
                 Reference className = this.NewStringUTF(env, arena.allocateFrom(clazz.getName()))
             )
             {
-                MemorySegment args = arena.allocate(JValue.LAYOUT, 3);
-                JValue.getAtIndex(args, 0).l(className.value);
-                JValue.getAtIndex(args, 1).z(false);
-                JValue.getAtIndex(args, 2).l(classLoader.value);
+                Buffer<JValue> args = JValue.allocate(arena, 3);
+                args.get(0).l(className.value);
+                args.get(1).z(false);
+                args.get(2).l(classLoader.value);
 
                 return this.CallStaticObjectMethodA(env, classClass.value, this.getStaticMethodID(
                     env, classClass.value, "forName", methodType(Class.class, String.class, boolean.class, ClassLoader.class)
-                ), args);
+                ), args.pointer());
             }
         }
     }

@@ -27,9 +27,17 @@ pub fn build(b: *std.Build) !void {
 
         .{ .cpu_arch = .x86_64, .os_tag = .freebsd },
         .{ .cpu_arch = .aarch64, .os_tag = .freebsd },
+        .{ .cpu_arch = .arm, .os_tag = .freebsd },
+        .{ .cpu_arch = .riscv64, .os_tag = .freebsd },
+        .{ .cpu_arch = .powerpc64, .os_tag = .freebsd },
+        .{ .cpu_arch = .powerpc64le, .os_tag = .freebsd },
 
         .{ .cpu_arch = .x86_64, .os_tag = .netbsd },
-        .{ .cpu_arch = .aarch64, .os_tag = .netbsd }
+        .{ .cpu_arch = .aarch64, .os_tag = .netbsd },
+        .{ .cpu_arch = .arm, .os_tag = .netbsd },
+        .{ .cpu_arch = .powerpc, .os_tag = .netbsd },
+        .{ .cpu_arch = .mips, .os_tag = .netbsd },
+        .{ .cpu_arch = .mipsel, .os_tag = .netbsd }
     };
 
     const optimize = b.standardOptimizeOption(.{});

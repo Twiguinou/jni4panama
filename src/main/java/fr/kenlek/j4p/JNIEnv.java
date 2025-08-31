@@ -1,6 +1,7 @@
 package fr.kenlek.j4p;
 
 import fr.kenlek.jpgen.api.Addressable;
+import fr.kenlek.jpgen.api.Buffer;
 import fr.kenlek.jpgen.api.dynload.Layout;
 
 import java.lang.foreign.MemoryLayout;
@@ -18,11 +19,29 @@ public record JNIEnv(MemorySegment pointer) implements Addressable
     public static final StructLayout LAYOUT = makeStructLayout(
         ADDRESS.withName("functions")
     ).withName("JNIEnv_");
-    public static final long MEMBER_OFFSET__functions = LAYOUT.byteOffset(MemoryLayout.PathElement.groupElement("functions"));
+    public static final long OFFSET__functions = LAYOUT.byteOffset(MemoryLayout.PathElement.groupElement("functions"));
+
+    public JNIEnv
+    {
+        if (pointer.maxByteAlignment() < LAYOUT.byteAlignment() || pointer.byteSize() != LAYOUT.byteSize())
+        {
+            throw new IllegalArgumentException("Memory slice does not follow layout constraints.");
+        }
+    }
 
     public JNIEnv(SegmentAllocator allocator)
     {
         this(allocator.allocate(LAYOUT));
+    }
+
+    public static Buffer<JNIEnv> buffer(MemorySegment data)
+    {
+        return Buffer.of(data, LAYOUT, JNIEnv::new);
+    }
+
+    public static Buffer<JNIEnv> allocate(SegmentAllocator allocator, long size)
+    {
+        return Buffer.allocate(allocator, LAYOUT, size, JNIEnv::new);
     }
 
     public static JNIEnv getAtIndex(MemorySegment buffer, long index)
@@ -42,16 +61,16 @@ public record JNIEnv(MemorySegment pointer) implements Addressable
 
     public JNINativeInterface functions()
     {
-        return new JNINativeInterface(this.pointer().get(ADDRESS, MEMBER_OFFSET__functions).reinterpret(JNINativeInterface.LAYOUT.byteSize()));
+        return new JNINativeInterface(this.pointer().get(ADDRESS.withTargetLayout(JNINativeInterface.LAYOUT), OFFSET__functions));
     }
 
     public void functions(JNINativeInterface value)
     {
-        this.pointer().set(ADDRESS, MEMBER_OFFSET__functions, value.pointer());
+        this.pointer().set(ADDRESS, OFFSET__functions, value.pointer());
     }
 
     public MemorySegment $functions()
     {
-        return this.pointer().asSlice(MEMBER_OFFSET__functions, ADDRESS);
+        return this.pointer().asSlice(OFFSET__functions, ADDRESS);
     }
 }

@@ -1,6 +1,7 @@
 package fr.kenlek.j4p;
 
 import fr.kenlek.jpgen.api.Addressable;
+import fr.kenlek.jpgen.api.Buffer;
 import fr.kenlek.jpgen.api.dynload.Layout;
 
 import java.lang.foreign.MemorySegment;
@@ -15,17 +16,35 @@ public record JNINativeMethod(MemorySegment pointer) implements Addressable
 {
     @Layout.Value("LAYOUT")
     public static final StructLayout LAYOUT = makeStructLayout(
-        UNBOUNDED_POINTER.withName("name"),
-        UNBOUNDED_POINTER.withName("signature"),
+        ADDRESS.withName("name"),
+        ADDRESS.withName("signature"),
         ADDRESS.withName("fnPtr")
     ).withName("JNINativeMethod");
-    public static final long MEMBER_OFFSET__name = LAYOUT.byteOffset(PathElement.groupElement("name"));
-    public static final long MEMBER_OFFSET__signature = LAYOUT.byteOffset(PathElement.groupElement("signature"));
-    public static final long MEMBER_OFFSET__fnPtr = LAYOUT.byteOffset(PathElement.groupElement("fnPtr"));
+    public static final long OFFSET__name = LAYOUT.byteOffset(PathElement.groupElement("name"));
+    public static final long OFFSET__signature = LAYOUT.byteOffset(PathElement.groupElement("signature"));
+    public static final long OFFSET__fnPtr = LAYOUT.byteOffset(PathElement.groupElement("fnPtr"));
+
+    public JNINativeMethod
+    {
+        if (pointer.maxByteAlignment() < LAYOUT.byteAlignment() || pointer.byteSize() != LAYOUT.byteSize())
+        {
+            throw new IllegalArgumentException("Memory slice does not follow layout constraints.");
+        }
+    }
 
     public JNINativeMethod(SegmentAllocator allocator)
     {
         this(allocator.allocate(LAYOUT));
+    }
+
+    public static Buffer<JNINativeMethod> buffer(MemorySegment data)
+    {
+        return Buffer.of(data, LAYOUT, JNINativeMethod::new);
+    }
+
+    public static Buffer<JNINativeMethod> allocate(SegmentAllocator allocator, long size)
+    {
+        return Buffer.allocate(allocator, LAYOUT, size, JNINativeMethod::new);
     }
 
     public static JNINativeMethod getAtIndex(MemorySegment buffer, long index)
@@ -45,46 +64,46 @@ public record JNINativeMethod(MemorySegment pointer) implements Addressable
 
     public MemorySegment name()
     {
-        return this.pointer().get(UNBOUNDED_POINTER, MEMBER_OFFSET__name);
+        return this.pointer().get(UNBOUNDED_POINTER, OFFSET__name);
     }
 
     public void name(MemorySegment value)
     {
-        this.pointer().set(UNBOUNDED_POINTER, MEMBER_OFFSET__name, value);
+        this.pointer().set(ADDRESS, OFFSET__name, value);
     }
 
     public MemorySegment $name()
     {
-        return this.pointer().asSlice(MEMBER_OFFSET__name, UNBOUNDED_POINTER);
+        return this.pointer().asSlice(OFFSET__name, ADDRESS);
     }
 
     public MemorySegment signature()
     {
-        return this.pointer().get(UNBOUNDED_POINTER, MEMBER_OFFSET__signature);
+        return this.pointer().get(UNBOUNDED_POINTER, OFFSET__signature);
     }
 
     public void signature(MemorySegment value)
     {
-        this.pointer().set(UNBOUNDED_POINTER, MEMBER_OFFSET__signature, value);
+        this.pointer().set(ADDRESS, OFFSET__signature, value);
     }
 
     public MemorySegment $signature()
     {
-        return this.pointer().asSlice(MEMBER_OFFSET__signature, UNBOUNDED_POINTER);
+        return this.pointer().asSlice(OFFSET__signature, ADDRESS);
     }
 
     public MemorySegment fnPtr()
     {
-        return this.pointer().get(ADDRESS, MEMBER_OFFSET__fnPtr);
+        return this.pointer().get(ADDRESS, OFFSET__fnPtr);
     }
 
     public void fnPtr(MemorySegment value)
     {
-        this.pointer().set(ADDRESS, MEMBER_OFFSET__fnPtr, value);
+        this.pointer().set(ADDRESS, OFFSET__fnPtr, value);
     }
 
     public MemorySegment $fnPtr()
     {
-        return this.pointer().asSlice(MEMBER_OFFSET__fnPtr, ADDRESS);
+        return this.pointer().asSlice(OFFSET__fnPtr, ADDRESS);
     }
 }
