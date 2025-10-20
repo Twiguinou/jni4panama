@@ -1,26 +1,15 @@
 package fr.kenlek.j4p.awt;
 
+import module fr.kenlek.jpgen.api;
+import module java.base;
+
 import fr.kenlek.j4p.JNIEnv;
 import fr.kenlek.j4p.JavaNativeInterface;
 import fr.kenlek.j4p.Reference;
-import fr.kenlek.jpgen.api.dynload.DowncallTransformer;
-import fr.kenlek.jpgen.api.dynload.Ignore;
-import fr.kenlek.jpgen.api.dynload.Layout;
-import fr.kenlek.jpgen.api.dynload.LinkingDowncallDispatcher;
-import fr.kenlek.jpgen.api.dynload.NativeProxies;
-import fr.kenlek.jpgen.api.dynload.Redirect;
-import fr.kenlek.jpgen.api.dynload.Unbound;
 
-import java.lang.foreign.Arena;
-import java.lang.foreign.Linker;
-import java.lang.foreign.MemorySegment;
-import java.lang.foreign.SymbolLookup;
-import java.lang.invoke.MethodHandles;
-import java.nio.file.Path;
-
-import static fr.kenlek.jpgen.api.ForeignUtils.SYSTEM_LINKER;
 import static fr.kenlek.jpgen.api.dynload.DowncallTransformer.PUBLIC_GROUP_TRANSFORMER;
 import static java.lang.foreign.SymbolLookup.libraryLookup;
+import static java.lang.invoke.MethodHandles.*;
 import static java.lang.invoke.MethodType.methodType;
 import static java.util.Objects.requireNonNull;
 
@@ -33,6 +22,11 @@ import static java.util.Objects.requireNonNull;
 })
 public interface AWTNativeInterface
 {
+    DowncallTransformer DOWNCALL_TRANSFORMER = makeCallArranger(JAWTDrawingSurface.class)
+        .and(makeCallArranger(JAWT.class))
+        .and(makeCallArranger(JAWTX11DrawingSurfaceInfo.class))
+        .and(PUBLIC_GROUP_TRANSFORMER);
+
     int JAWT_LOCK_ERROR = 0x00000001;
     int JAWT_LOCK_CLIP_CHANGED = 0x00000002;
     int JAWT_LOCK_BOUNDS_CHANGED = 0x00000004;
@@ -51,42 +45,39 @@ public interface AWTNativeInterface
         return libraryLookup(Path.of(javaHome).resolve("lib", System.mapLibraryName("jawt")), arena);
     }
 
-    static AWTNativeInterface load(SymbolLookup lookup, Linker linker)
+    static AWTNativeInterface load(SymbolLookup lookup)
     {
-        return NativeProxies.instantiate(AWTNativeInterface.class, new LinkingDowncallDispatcher(lookup, linker).compose(
-            makeCallArranger(JAWTDrawingSurface.class).and(makeCallArranger(JAWT.class)).and(makeCallArranger(JAWTX11DrawingSurfaceInfo.class)).and(PUBLIC_GROUP_TRANSFORMER)
-        ));
+        return NativeProxies.make(AWTNativeInterface.class, new LinkingDispatcher(lookup).and(DOWNCALL_TRANSFORMER));
     }
 
     static AWTNativeInterface load(SymbolLookup jawtLookup, SymbolLookup j4pLookup)
     {
-        return load(jawtLookup.or(j4pLookup), SYSTEM_LINKER);
+        return load(jawtLookup.or(j4pLookup));
     }
 
     private static DowncallTransformer makeCallArranger(Class<?> handleType)
     {
-        return DowncallTransformer.matching(
-            method -> method.isAnnotationPresent(Unbound.class) && method.getParameterCount() > 0 && method.getParameterTypes()[0].equals(handleType),
-            (method, handle) ->
-            {
-                try
-                {
-                    MethodHandles.Lookup lookup = MethodHandles.publicLookup();
-                    handle = MethodHandles.filterArguments(handle, 0, lookup.findVirtual(handleType, method.getName(), methodType(MemorySegment.class)));
-                    if (!method.getParameters()[0].isAnnotationPresent(Ignore.class))
-                    {
-                        handle = MethodHandles.filterArguments(handle, 1, NativeProxies.findGroupUnwrapper(lookup, handleType));
-                        handle = MethodHandles.foldArguments(handle, MethodHandles.identity(handleType));
-                    }
+        return DowncallTransformer.filter((method, handle) ->
+        {
+            MethodHandles.Lookup lookup = publicLookup();
+            MethodType MT_MemorySegment = methodType(MemorySegment.class);
 
-                    return handle;
-                }
-                catch (NoSuchMethodException | IllegalAccessException e)
+            try
+            {
+                handle = filterArguments(handle, 0, lookup.findVirtual(handleType, method.getName(), MT_MemorySegment));
+                if (!method.getParameters()[0].isAnnotationPresent(Ignore.class))
                 {
-                    throw new RuntimeException(e);
+                    handle = filterArguments(handle, 1, lookup.findVirtual(handleType, "pointer", MT_MemorySegment));
+                    handle = foldArguments(handle, MethodHandles.identity(handleType));
                 }
+
+                return handle;
             }
-        );
+            catch (NoSuchMethodException | IllegalAccessException e)
+            {
+                throw new RuntimeException(e);
+            }
+        }, method -> method.isAnnotationPresent(Unbound.class) && method.getParameterCount() > 0 && method.getParameterTypes()[0].equals(handleType));
     }
 
     @Redirect("JAWT_GetAWT")

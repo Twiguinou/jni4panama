@@ -1,4 +1,4 @@
-.gradle
-.idea
-build
-.zig-cache
+.gradle/
+.idea/
+build/
+.zig-cache/

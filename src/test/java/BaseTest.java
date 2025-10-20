@@ -1,11 +1,9 @@
+import module java.base;
+
 import fr.kenlek.j4p.JNIEnv;
 import fr.kenlek.j4p.JValue;
 import fr.kenlek.j4p.JavaNativeInterface;
 import fr.kenlek.j4p.Reference;
-
-import java.io.IOException;
-import java.io.PrintStream;
-import java.lang.foreign.Arena;
 
 import static fr.kenlek.j4p.JavaNativeInterface.*;
 import static java.lang.invoke.MethodType.methodType;
@@ -13,7 +11,7 @@ import static java.lang.invoke.MethodType.methodType;
 public final class BaseTest
 {private BaseTest() {}
 
-    public static void main(String... args) throws IOException
+    static void main() throws IOException
     {
         try (Arena arena = Arena.ofConfined())
         {

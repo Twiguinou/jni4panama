@@ -1,21 +1,16 @@
 package fr.kenlek.j4p.awt;
 
-import fr.kenlek.jpgen.api.Addressable;
+import module fr.kenlek.jpgen.api;
+import module java.base;
+
 import fr.kenlek.jpgen.api.Buffer;
-import fr.kenlek.jpgen.api.dynload.Layout;
-import fr.kenlek.jpgen.api.types.CUnsignedLong;
-
-import java.lang.foreign.MemorySegment;
-import java.lang.foreign.SegmentAllocator;
-import java.lang.foreign.StructLayout;
-
-import static java.lang.foreign.ValueLayout.*;
 
 import static fr.kenlek.jpgen.api.ForeignUtils.makeStructLayout;
+import static java.lang.foreign.ValueLayout.*;
 
+@Layout.Container("LAYOUT")
 public record JAWTX11DrawingSurfaceInfo(MemorySegment pointer) implements Addressable
 {
-    @Layout.Value("LAYOUT")
     public static final StructLayout LAYOUT = makeStructLayout(
         CUnsignedLong.LAYOUT.withName("drawable"),
         ADDRESS.withName("display"),
@@ -24,19 +19,16 @@ public record JAWTX11DrawingSurfaceInfo(MemorySegment pointer) implements Addres
         JAVA_INT.withName("depth"),
         ADDRESS.withName("GetAWTColor")
     ).withName("JAWT_X11DrawingSurfaceInfo");
-    public static final long OFFSET__drawable = LAYOUT.byteOffset(PathElement.groupElement("drawable"));
-    public static final long OFFSET__display = LAYOUT.byteOffset(PathElement.groupElement("display"));
-    public static final long OFFSET__visualID = LAYOUT.byteOffset(PathElement.groupElement("visualID"));
-    public static final long OFFSET__colormapID = LAYOUT.byteOffset(PathElement.groupElement("colormapID"));
-    public static final long OFFSET__depth = LAYOUT.byteOffset(PathElement.groupElement("depth"));
-    public static final long OFFSET__GetAWTColor = LAYOUT.byteOffset(PathElement.groupElement("GetAWTColor"));
+    public static final long OFFSET_drawable = LAYOUT.byteOffset(PathElement.groupElement("drawable"));
+    public static final long OFFSET_display = LAYOUT.byteOffset(PathElement.groupElement("display"));
+    public static final long OFFSET_visualID = LAYOUT.byteOffset(PathElement.groupElement("visualID"));
+    public static final long OFFSET_colormapID = LAYOUT.byteOffset(PathElement.groupElement("colormapID"));
+    public static final long OFFSET_depth = LAYOUT.byteOffset(PathElement.groupElement("depth"));
+    public static final long OFFSET_GetAWTColor = LAYOUT.byteOffset(PathElement.groupElement("GetAWTColor"));
 
     public JAWTX11DrawingSurfaceInfo
     {
-        if (pointer.maxByteAlignment() < LAYOUT.byteAlignment() || pointer.byteSize() != LAYOUT.byteSize())
-        {
-            throw new IllegalArgumentException("Memory slice does not follow layout constraints.");
-        }
+        Addressable.checkLayoutConstraints(pointer, LAYOUT);
     }
 
     public JAWTX11DrawingSurfaceInfo(SegmentAllocator allocator)
@@ -46,32 +38,32 @@ public record JAWTX11DrawingSurfaceInfo(MemorySegment pointer) implements Addres
 
     public static Buffer<JAWTX11DrawingSurfaceInfo> buffer(MemorySegment data)
     {
-        return Buffer.of(data, LAYOUT, JAWTX11DrawingSurfaceInfo::new);
+        return Buffer.slices(data, LAYOUT, JAWTX11DrawingSurfaceInfo::new);
     }
 
     public static Buffer<JAWTX11DrawingSurfaceInfo> allocate(SegmentAllocator allocator, long size)
     {
-        return Buffer.allocate(allocator, LAYOUT, size, JAWTX11DrawingSurfaceInfo::new);
+        return Buffer.allocateSlices(allocator, LAYOUT, size, JAWTX11DrawingSurfaceInfo::new);
     }
 
-    public static JAWTX11DrawingSurfaceInfo getAtIndex(MemorySegment buffer, long index)
+    public static JAWTX11DrawingSurfaceInfo getAtIndex(MemorySegment buffer, long offset, long index)
     {
-        return new JAWTX11DrawingSurfaceInfo(buffer.asSlice(index * LAYOUT.byteSize(), LAYOUT));
+        return new JAWTX11DrawingSurfaceInfo(buffer.asSlice(LAYOUT.scale(offset, index), LAYOUT));
     }
 
-    public static void setAtIndex(MemorySegment buffer, long index, JAWTX11DrawingSurfaceInfo value)
+    public static void setAtIndex(MemorySegment buffer, long offset, long index, JAWTX11DrawingSurfaceInfo value)
     {
-        MemorySegment.copy(value.pointer(), 0, buffer, index * LAYOUT.byteSize(), LAYOUT.byteSize());
+        MemorySegment.copy(value.pointer(), 0, buffer, LAYOUT.scale(offset, index), LAYOUT.byteSize());
     }
 
-    public void copyFrom(JAWTX11DrawingSurfaceInfo value)
+    public void copyFrom(JAWTX11DrawingSurfaceInfo other)
     {
-        MemorySegment.copy(value.pointer(), 0, this.pointer(), 0, LAYOUT.byteSize());
+        MemorySegment.copy(other.pointer(), 0, this.pointer(), 0, LAYOUT.byteSize());
     }
 
     public MemorySegment $drawable()
     {
-        return this.pointer().asSlice(OFFSET__drawable, CUnsignedLong.LAYOUT);
+        return this.pointer().asSlice(OFFSET_drawable, CUnsignedLong.LAYOUT);
     }
 
     public CUnsignedLong drawable()
@@ -86,22 +78,22 @@ public record JAWTX11DrawingSurfaceInfo(MemorySegment pointer) implements Addres
 
     public MemorySegment display()
     {
-        return this.pointer().get(ADDRESS, OFFSET__display);
+        return this.pointer().get(ADDRESS, OFFSET_display);
     }
 
     public void display(MemorySegment value)
     {
-        this.pointer().set(ADDRESS, OFFSET__display, value);
+        this.pointer().set(ADDRESS, OFFSET_display, value);
     }
 
     public MemorySegment $display()
     {
-        return this.pointer().asSlice(OFFSET__display, ADDRESS);
+        return this.pointer().asSlice(OFFSET_display, ADDRESS);
     }
 
     public MemorySegment $visualID()
     {
-        return this.pointer().asSlice(OFFSET__visualID, CUnsignedLong.LAYOUT);
+        return this.pointer().asSlice(OFFSET_visualID, CUnsignedLong.LAYOUT);
     }
 
     public CUnsignedLong visualID()
@@ -116,7 +108,7 @@ public record JAWTX11DrawingSurfaceInfo(MemorySegment pointer) implements Addres
 
     public MemorySegment $colormapID()
     {
-        return this.pointer().asSlice(OFFSET__colormapID, CUnsignedLong.LAYOUT);
+        return this.pointer().asSlice(OFFSET_colormapID, CUnsignedLong.LAYOUT);
     }
 
     public CUnsignedLong colormapID()
@@ -131,31 +123,31 @@ public record JAWTX11DrawingSurfaceInfo(MemorySegment pointer) implements Addres
 
     public int depth()
     {
-        return this.pointer().get(JAVA_INT, OFFSET__depth);
+        return this.pointer().get(JAVA_INT, OFFSET_depth);
     }
 
     public void depth(int value)
     {
-        this.pointer().set(JAVA_INT, OFFSET__depth, value);
+        this.pointer().set(JAVA_INT, OFFSET_depth, value);
     }
 
     public MemorySegment $depth()
     {
-        return this.pointer().asSlice(OFFSET__depth, JAVA_INT);
+        return this.pointer().asSlice(OFFSET_depth, JAVA_INT);
     }
 
     public MemorySegment GetAWTColor()
     {
-        return this.pointer().get(ADDRESS, OFFSET__GetAWTColor);
+        return this.pointer().get(ADDRESS, OFFSET_GetAWTColor);
     }
 
     public void GetAWTColor(MemorySegment value)
     {
-        this.pointer().set(ADDRESS, OFFSET__GetAWTColor, value);
+        this.pointer().set(ADDRESS, OFFSET_GetAWTColor, value);
     }
 
     public MemorySegment $GetAWTColor()
     {
-        return this.pointer().asSlice(OFFSET__GetAWTColor, ADDRESS);
+        return this.pointer().asSlice(OFFSET_GetAWTColor, ADDRESS);
     }
 }

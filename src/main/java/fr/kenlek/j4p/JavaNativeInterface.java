@@ -1,32 +1,16 @@
 package fr.kenlek.j4p;
 
+import module fr.kenlek.jpgen.api;
+import module java.base;
+
 import fr.kenlek.jpgen.api.Buffer;
-import fr.kenlek.jpgen.api.Host;
-import fr.kenlek.jpgen.api.Platform;
-import fr.kenlek.jpgen.api.dynload.DowncallTransformer;
-import fr.kenlek.jpgen.api.dynload.Layout;
-import fr.kenlek.jpgen.api.dynload.LinkingDowncallDispatcher;
-import fr.kenlek.jpgen.api.dynload.NativeProxies;
-import fr.kenlek.jpgen.api.dynload.Redirect;
-import fr.kenlek.jpgen.api.dynload.Unbound;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.lang.foreign.Arena;
-import java.lang.foreign.Linker;
-import java.lang.foreign.MemorySegment;
-import java.lang.foreign.SymbolLookup;
-import java.lang.invoke.MethodHandles;
-import java.lang.invoke.MethodType;
-import java.nio.file.Path;
-
-import static java.lang.foreign.MemorySegment.NULL;
-
-import static java.lang.foreign.ValueLayout.*;
-
-import static fr.kenlek.jpgen.api.ForeignUtils.*;
+import static fr.kenlek.jpgen.api.ForeignUtils.loadLookup;
 import static fr.kenlek.jpgen.api.dynload.DowncallTransformer.PUBLIC_GROUP_TRANSFORMER;
+import static java.lang.foreign.MemorySegment.NULL;
 import static java.lang.foreign.SymbolLookup.libraryLookup;
+import static java.lang.foreign.ValueLayout.*;
+import static java.lang.invoke.MethodHandles.*;
 import static java.lang.invoke.MethodType.methodType;
 import static java.util.Objects.requireNonNull;
 
@@ -36,6 +20,10 @@ import static java.util.Objects.requireNonNull;
 })
 public interface JavaNativeInterface
 {
+    DowncallTransformer DOWNCALL_TRANSFORMER = makeCallArranger(JNIEnv.class, JNINativeInterface.class)
+        .and(makeCallArranger(JavaVM.class, JNIInvokeInterface.class))
+        .and(PUBLIC_GROUP_TRANSFORMER);
+
     int JNI_OK = 0;
     int JNI_ERR = -1;
     int JNI_EDETACHED = -2;
@@ -74,7 +62,7 @@ public interface JavaNativeInterface
         String libraryPath = System.getProperty("j4p.library.path");
         if (libraryPath != null)
         {
-            return SymbolLookup.libraryLookup(Path.of(libraryPath), arena);
+            return libraryLookup(Path.of(libraryPath), arena);
         }
 
         String libraryName = "j4p-" + Platform.CURRENT.code();
@@ -91,43 +79,40 @@ public interface JavaNativeInterface
         }
     }
 
-    static JavaNativeInterface load(SymbolLookup lookup, Linker linker)
+    private static DowncallTransformer makeCallArranger(Class<?> handleType, Class<?> functionsType)
     {
-        return NativeProxies.instantiate(JavaNativeInterface.class, new LinkingDowncallDispatcher(lookup, linker).compose(
-            makeCallArranger(JNIEnv.class, JNINativeInterface.class).and(makeCallArranger(JavaVM.class, JNIInvokeInterface.class)).and(PUBLIC_GROUP_TRANSFORMER)
-        ));
+        return DowncallTransformer.filter((method, handle) ->
+        {
+            MethodHandles.Lookup lookup = publicLookup();
+            MethodType MT_MemorySegment = methodType(MemorySegment.class);
+
+            try
+            {
+                // handle is R(MemorySegment,MemorySegment,...)
+                handle = filterArguments(handle, 0, lookup.findVirtual(functionsType, method.getName(), MT_MemorySegment));
+                // handle is R(JNINativeInterface or JNIInvokeInterface,MemorySegment,...)
+                handle = filterArguments(handle, 0, lookup.findVirtual(handleType, "functions", methodType(functionsType)));
+                // handle is R(JNIEnv or JavaVM,MemorySegment,...)
+                handle = filterArguments(handle, 1, lookup.findVirtual(handleType, "pointer", MT_MemorySegment));
+                // handle is R(JNIEnv or JavaVM,JNIEnv or JavaVM,...)
+                return foldArguments(handle, identity(handleType));
+                // we return R(JNIEnv or JavaVM,...)
+            }
+            catch (NoSuchMethodException | IllegalAccessException e)
+            {
+                throw new RuntimeException(e);
+            }
+        }, method -> method.isAnnotationPresent(Unbound.class) && method.getParameterCount() > 0 && method.getParameterTypes()[0].equals(handleType));
+    }
+
+    static JavaNativeInterface load(SymbolLookup lookup)
+    {
+        return NativeProxies.make(JavaNativeInterface.class, new LinkingDispatcher(lookup).and(DOWNCALL_TRANSFORMER));
     }
 
     static JavaNativeInterface load(SymbolLookup jvmLookup, SymbolLookup j4pLookup)
     {
-        return load(jvmLookup.or(j4pLookup), SYSTEM_LINKER);
-    }
-
-    private static DowncallTransformer makeCallArranger(Class<?> handleType, Class<?> functionsType)
-    {
-        return DowncallTransformer.matching(
-            method -> method.isAnnotationPresent(Unbound.class) && method.getParameterCount() > 0 && method.getParameterTypes()[0].equals(handleType),
-            (method, handle) ->
-            {
-                try
-                {
-                    MethodHandles.Lookup lookup = MethodHandles.publicLookup();
-                    // handle is R(MemorySegment,MemorySegment,...)
-                    handle = MethodHandles.filterArguments(handle, 0, lookup.findVirtual(functionsType, method.getName(), methodType(MemorySegment.class)));
-                    // handle is R(JNINativeInterface or JNIInvokeInterface,MemorySegment,...)
-                    handle = MethodHandles.filterArguments(handle, 0, lookup.findVirtual(handleType, "functions", methodType(functionsType)));
-                    // handle is R(JNIEnv or JavaVM,MemorySegment,...)
-                    handle = MethodHandles.filterArguments(handle, 1, NativeProxies.findGroupUnwrapper(lookup, handleType));
-                    // handle is R(JNIEnv or JavaVM,JNIEnv or JavaVM,...)
-                    return MethodHandles.foldArguments(handle, MethodHandles.identity(handleType));
-                    // we return R(JNIEnv or JavaVM,...)
-                }
-                catch (NoSuchMethodException | IllegalAccessException e)
-                {
-                    throw new RuntimeException(e);
-                }
-            }
-        );
+        return load(jvmLookup.or(j4pLookup));
     }
 
     @Redirect("JNI_GetDefaultJavaVMInitArgs")

@@ -1,14 +1,12 @@
+import module java.base;
+
 import fr.kenlek.j4p.JNIEnv;
 import fr.kenlek.j4p.JavaNativeInterface;
 import fr.kenlek.j4p.Reference;
 import fr.kenlek.j4p.awt.AWTNativeInterface;
 import fr.kenlek.j4p.awt.JAWT;
 import fr.kenlek.j4p.awt.JAWTDrawingSurface;
-
 import java.awt.Canvas;
-import java.io.IOException;
-import java.lang.foreign.Arena;
-import java.lang.foreign.SymbolLookup;
 
 import static fr.kenlek.j4p.JavaNativeInterface.*;
 import static fr.kenlek.j4p.awt.AWTNativeInterface.*;
@@ -16,7 +14,7 @@ import static fr.kenlek.j4p.awt.AWTNativeInterface.*;
 public final class JAWTTest
 {private JAWTTest() {}
 
-    public static void main(String... args) throws IOException
+    static void main() throws IOException
     {
         try (Arena arena = Arena.ofConfined())
         {

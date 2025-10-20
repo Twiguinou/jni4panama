@@ -5,7 +5,7 @@ buildscript {
     }
 
     dependencies {
-        classpath("fr.kenlek.jpgen:jpgen-api:0.1.3")
+        classpath("fr.kenlek.jpgen:jpgen-api:0.2.0")
     }
 }
 

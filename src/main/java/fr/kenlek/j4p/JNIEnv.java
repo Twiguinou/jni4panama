@@ -1,32 +1,24 @@
 package fr.kenlek.j4p;
 
-import fr.kenlek.jpgen.api.Addressable;
+import module fr.kenlek.jpgen.api;
+import module java.base;
+
 import fr.kenlek.jpgen.api.Buffer;
-import fr.kenlek.jpgen.api.dynload.Layout;
-
-import java.lang.foreign.MemoryLayout;
-import java.lang.foreign.MemorySegment;
-import java.lang.foreign.SegmentAllocator;
-import java.lang.foreign.StructLayout;
-
-import static java.lang.foreign.ValueLayout.ADDRESS;
 
 import static fr.kenlek.jpgen.api.ForeignUtils.makeStructLayout;
+import static java.lang.foreign.ValueLayout.ADDRESS;
 
+@Layout.Container("LAYOUT")
 public record JNIEnv(MemorySegment pointer) implements Addressable
 {
-    @Layout.Value("LAYOUT")
     public static final StructLayout LAYOUT = makeStructLayout(
         ADDRESS.withName("functions")
     ).withName("JNIEnv_");
-    public static final long OFFSET__functions = LAYOUT.byteOffset(MemoryLayout.PathElement.groupElement("functions"));
+    public static final long OFFSET_functions = LAYOUT.byteOffset(MemoryLayout.PathElement.groupElement("functions"));
 
     public JNIEnv
     {
-        if (pointer.maxByteAlignment() < LAYOUT.byteAlignment() || pointer.byteSize() != LAYOUT.byteSize())
-        {
-            throw new IllegalArgumentException("Memory slice does not follow layout constraints.");
-        }
+        Addressable.checkLayoutConstraints(pointer, LAYOUT);
     }
 
     public JNIEnv(SegmentAllocator allocator)
@@ -36,41 +28,41 @@ public record JNIEnv(MemorySegment pointer) implements Addressable
 
     public static Buffer<JNIEnv> buffer(MemorySegment data)
     {
-        return Buffer.of(data, LAYOUT, JNIEnv::new);
+        return Buffer.slices(data, LAYOUT, JNIEnv::new);
     }
 
     public static Buffer<JNIEnv> allocate(SegmentAllocator allocator, long size)
     {
-        return Buffer.allocate(allocator, LAYOUT, size, JNIEnv::new);
+        return Buffer.allocateSlices(allocator, LAYOUT, size, JNIEnv::new);
     }
 
-    public static JNIEnv getAtIndex(MemorySegment buffer, long index)
+    public static JNIEnv getAtIndex(MemorySegment buffer, long offset, long index)
     {
-        return new JNIEnv(buffer.asSlice(index * LAYOUT.byteSize(), LAYOUT));
+        return new JNIEnv(buffer.asSlice(LAYOUT.scale(offset, index), LAYOUT));
     }
 
-    public static void setAtIndex(MemorySegment buffer, long index, JNIEnv value)
+    public static void setAtIndex(MemorySegment buffer, long offset, long index, JNIEnv value)
     {
-        MemorySegment.copy(value.pointer(), 0, buffer, index * LAYOUT.byteSize(), LAYOUT.byteSize());
+        MemorySegment.copy(value.pointer(), 0, buffer, LAYOUT.scale(offset, index), LAYOUT.byteSize());
     }
 
-    public void copyFrom(JNIEnv value)
+    public void copyFrom(JNIEnv other)
     {
-        MemorySegment.copy(value.pointer(), 0, this.pointer(), 0, LAYOUT.byteSize());
+        MemorySegment.copy(other.pointer(), 0, this.pointer(), 0, LAYOUT.byteSize());
     }
 
     public JNINativeInterface functions()
     {
-        return new JNINativeInterface(this.pointer().get(ADDRESS.withTargetLayout(JNINativeInterface.LAYOUT), OFFSET__functions));
+        return new JNINativeInterface(this.pointer().get(ADDRESS.withTargetLayout(JNINativeInterface.LAYOUT), OFFSET_functions));
     }
 
     public void functions(JNINativeInterface value)
     {
-        this.pointer().set(ADDRESS, OFFSET__functions, value.pointer());
+        this.pointer().set(ADDRESS, OFFSET_functions, value.pointer());
     }
 
     public MemorySegment $functions()
     {
-        return this.pointer().asSlice(OFFSET__functions, ADDRESS);
+        return this.pointer().asSlice(OFFSET_functions, ADDRESS);
     }
 }

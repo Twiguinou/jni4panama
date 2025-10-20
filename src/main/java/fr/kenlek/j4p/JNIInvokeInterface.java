@@ -1,21 +1,16 @@
 package fr.kenlek.j4p;
 
-import fr.kenlek.jpgen.api.Addressable;
+import module fr.kenlek.jpgen.api;
+import module java.base;
+
 import fr.kenlek.jpgen.api.Buffer;
-import fr.kenlek.jpgen.api.dynload.Layout;
-
-import java.lang.foreign.MemoryLayout;
-import java.lang.foreign.MemorySegment;
-import java.lang.foreign.SegmentAllocator;
-import java.lang.foreign.StructLayout;
-
-import static java.lang.foreign.ValueLayout.ADDRESS;
 
 import static fr.kenlek.jpgen.api.ForeignUtils.makeStructLayout;
+import static java.lang.foreign.ValueLayout.ADDRESS;
 
+@Layout.Container("LAYOUT")
 public record JNIInvokeInterface(MemorySegment pointer) implements Addressable
 {
-    @Layout.Value("LAYOUT")
     public static final StructLayout LAYOUT = makeStructLayout(
         ADDRESS.withName("reserved0"),
         ADDRESS.withName("reserved1"),
@@ -26,21 +21,18 @@ public record JNIInvokeInterface(MemorySegment pointer) implements Addressable
         ADDRESS.withName("GetEnv"),
         ADDRESS.withName("AttachCurrentThreadAsDaemon")
     ).withName("JNIInvokeInterface_");
-    public static final long OFFSET__reserved0 = LAYOUT.byteOffset(MemoryLayout.PathElement.groupElement("reserved0"));
-    public static final long OFFSET__reserved1 = LAYOUT.byteOffset(MemoryLayout.PathElement.groupElement("reserved1"));
-    public static final long OFFSET__reserved2 = LAYOUT.byteOffset(MemoryLayout.PathElement.groupElement("reserved2"));
-    public static final long OFFSET__DestroyJavaVM = LAYOUT.byteOffset(MemoryLayout.PathElement.groupElement("DestroyJavaVM"));
-    public static final long OFFSET__AttachCurrentThread = LAYOUT.byteOffset(MemoryLayout.PathElement.groupElement("AttachCurrentThread"));
-    public static final long OFFSET__DetachCurrentThread = LAYOUT.byteOffset(MemoryLayout.PathElement.groupElement("DetachCurrentThread"));
-    public static final long OFFSET__GetEnv = LAYOUT.byteOffset(MemoryLayout.PathElement.groupElement("GetEnv"));
-    public static final long OFFSET__AttachCurrentThreadAsDaemon = LAYOUT.byteOffset(MemoryLayout.PathElement.groupElement("AttachCurrentThreadAsDaemon"));
+    public static final long OFFSET_reserved0 = LAYOUT.byteOffset(MemoryLayout.PathElement.groupElement("reserved0"));
+    public static final long OFFSET_reserved1 = LAYOUT.byteOffset(MemoryLayout.PathElement.groupElement("reserved1"));
+    public static final long OFFSET_reserved2 = LAYOUT.byteOffset(MemoryLayout.PathElement.groupElement("reserved2"));
+    public static final long OFFSET_DestroyJavaVM = LAYOUT.byteOffset(MemoryLayout.PathElement.groupElement("DestroyJavaVM"));
+    public static final long OFFSET_AttachCurrentThread = LAYOUT.byteOffset(MemoryLayout.PathElement.groupElement("AttachCurrentThread"));
+    public static final long OFFSET_DetachCurrentThread = LAYOUT.byteOffset(MemoryLayout.PathElement.groupElement("DetachCurrentThread"));
+    public static final long OFFSET_GetEnv = LAYOUT.byteOffset(MemoryLayout.PathElement.groupElement("GetEnv"));
+    public static final long OFFSET_AttachCurrentThreadAsDaemon = LAYOUT.byteOffset(MemoryLayout.PathElement.groupElement("AttachCurrentThreadAsDaemon"));
 
     public JNIInvokeInterface
     {
-        if (pointer.maxByteAlignment() < LAYOUT.byteAlignment() || pointer.byteSize() != LAYOUT.byteSize())
-        {
-            throw new IllegalArgumentException("Memory slice does not follow layout constraints.");
-        }
+        Addressable.checkLayoutConstraints(pointer, LAYOUT);
     }
 
     public JNIInvokeInterface(SegmentAllocator allocator)
@@ -50,146 +42,146 @@ public record JNIInvokeInterface(MemorySegment pointer) implements Addressable
 
     public static Buffer<JNIInvokeInterface> buffer(MemorySegment data)
     {
-        return Buffer.of(data, LAYOUT, JNIInvokeInterface::new);
+        return Buffer.slices(data, LAYOUT, JNIInvokeInterface::new);
     }
 
     public static Buffer<JNIInvokeInterface> allocate(SegmentAllocator allocator, long size)
     {
-        return Buffer.allocate(allocator, LAYOUT, size, JNIInvokeInterface::new);
+        return Buffer.allocateSlices(allocator, LAYOUT, size, JNIInvokeInterface::new);
     }
 
-    public static JNIInvokeInterface getAtIndex(MemorySegment buffer, long index)
+    public static JNIInvokeInterface getAtIndex(MemorySegment buffer, long offset, long index)
     {
-        return new JNIInvokeInterface(buffer.asSlice(index * LAYOUT.byteSize(), LAYOUT));
+        return new JNIInvokeInterface(buffer.asSlice(LAYOUT.scale(offset, index), LAYOUT));
     }
 
-    public static void setAtIndex(MemorySegment buffer, long index, JNIInvokeInterface value)
+    public static void setAtIndex(MemorySegment buffer, long offset, long index, JNIInvokeInterface value)
     {
-        MemorySegment.copy(value.pointer(), 0, buffer, index * LAYOUT.byteSize(), LAYOUT.byteSize());
+        MemorySegment.copy(value.pointer(), 0, buffer, LAYOUT.scale(offset, index), LAYOUT.byteSize());
     }
 
-    public void copyFrom(JNIInvokeInterface value)
+    public void copyFrom(JNIInvokeInterface other)
     {
-        MemorySegment.copy(value.pointer(), 0, this.pointer(), 0, LAYOUT.byteSize());
+        MemorySegment.copy(other.pointer(), 0, this.pointer(), 0, LAYOUT.byteSize());
     }
 
     public MemorySegment reserved0()
     {
-        return this.pointer().get(ADDRESS, OFFSET__reserved0);
+        return this.pointer().get(ADDRESS, OFFSET_reserved0);
     }
 
     public void reserved0(MemorySegment value)
     {
-        this.pointer().set(ADDRESS, OFFSET__reserved0, value);
+        this.pointer().set(ADDRESS, OFFSET_reserved0, value);
     }
 
     public MemorySegment $reserved0()
     {
-        return this.pointer().asSlice(OFFSET__reserved0, ADDRESS);
+        return this.pointer().asSlice(OFFSET_reserved0, ADDRESS);
     }
 
     public MemorySegment reserved1()
     {
-        return this.pointer().get(ADDRESS, OFFSET__reserved1);
+        return this.pointer().get(ADDRESS, OFFSET_reserved1);
     }
 
     public void reserved1(MemorySegment value)
     {
-        this.pointer().set(ADDRESS, OFFSET__reserved1, value);
+        this.pointer().set(ADDRESS, OFFSET_reserved1, value);
     }
 
     public MemorySegment $reserved1()
     {
-        return this.pointer().asSlice(OFFSET__reserved1, ADDRESS);
+        return this.pointer().asSlice(OFFSET_reserved1, ADDRESS);
     }
 
     public MemorySegment reserved2()
     {
-        return this.pointer().get(ADDRESS, OFFSET__reserved2);
+        return this.pointer().get(ADDRESS, OFFSET_reserved2);
     }
 
     public void reserved2(MemorySegment value)
     {
-        this.pointer().set(ADDRESS, OFFSET__reserved2, value);
+        this.pointer().set(ADDRESS, OFFSET_reserved2, value);
     }
 
     public MemorySegment $reserved2()
     {
-        return this.pointer().asSlice(OFFSET__reserved2, ADDRESS);
+        return this.pointer().asSlice(OFFSET_reserved2, ADDRESS);
     }
 
     public MemorySegment DestroyJavaVM()
     {
-        return this.pointer().get(ADDRESS, OFFSET__DestroyJavaVM);
+        return this.pointer().get(ADDRESS, OFFSET_DestroyJavaVM);
     }
 
     public void DestroyJavaVM(MemorySegment value)
     {
-        this.pointer().set(ADDRESS, OFFSET__DestroyJavaVM, value);
+        this.pointer().set(ADDRESS, OFFSET_DestroyJavaVM, value);
     }
 
     public MemorySegment $DestroyJavaVM()
     {
-        return this.pointer().asSlice(OFFSET__DestroyJavaVM, ADDRESS);
+        return this.pointer().asSlice(OFFSET_DestroyJavaVM, ADDRESS);
     }
 
     public MemorySegment AttachCurrentThread()
     {
-        return this.pointer().get(ADDRESS, OFFSET__AttachCurrentThread);
+        return this.pointer().get(ADDRESS, OFFSET_AttachCurrentThread);
     }
 
     public void AttachCurrentThread(MemorySegment value)
     {
-        this.pointer().set(ADDRESS, OFFSET__AttachCurrentThread, value);
+        this.pointer().set(ADDRESS, OFFSET_AttachCurrentThread, value);
     }
 
     public MemorySegment $AttachCurrentThread()
     {
-        return this.pointer().asSlice(OFFSET__AttachCurrentThread, ADDRESS);
+        return this.pointer().asSlice(OFFSET_AttachCurrentThread, ADDRESS);
     }
 
     public MemorySegment DetachCurrentThread()
     {
-        return this.pointer().get(ADDRESS, OFFSET__DetachCurrentThread);
+        return this.pointer().get(ADDRESS, OFFSET_DetachCurrentThread);
     }
 
     public void DetachCurrentThread(MemorySegment value)
     {
-        this.pointer().set(ADDRESS, OFFSET__DetachCurrentThread, value);
+        this.pointer().set(ADDRESS, OFFSET_DetachCurrentThread, value);
     }
 
     public MemorySegment $DetachCurrentThread()
     {
-        return this.pointer().asSlice(OFFSET__DetachCurrentThread, ADDRESS);
+        return this.pointer().asSlice(OFFSET_DetachCurrentThread, ADDRESS);
     }
 
     public MemorySegment GetEnv()
     {
-        return this.pointer().get(ADDRESS, OFFSET__GetEnv);
+        return this.pointer().get(ADDRESS, OFFSET_GetEnv);
     }
 
     public void GetEnv(MemorySegment value)
     {
-        this.pointer().set(ADDRESS, OFFSET__GetEnv, value);
+        this.pointer().set(ADDRESS, OFFSET_GetEnv, value);
     }
 
     public MemorySegment $GetEnv()
     {
-        return this.pointer().asSlice(OFFSET__GetEnv, ADDRESS);
+        return this.pointer().asSlice(OFFSET_GetEnv, ADDRESS);
     }
 
     public MemorySegment AttachCurrentThreadAsDaemon()
     {
-        return this.pointer().get(ADDRESS, OFFSET__AttachCurrentThreadAsDaemon);
+        return this.pointer().get(ADDRESS, OFFSET_AttachCurrentThreadAsDaemon);
     }
 
     public void AttachCurrentThreadAsDaemon(MemorySegment value)
     {
-        this.pointer().set(ADDRESS, OFFSET__AttachCurrentThreadAsDaemon, value);
+        this.pointer().set(ADDRESS, OFFSET_AttachCurrentThreadAsDaemon, value);
     }
 
     public MemorySegment $AttachCurrentThreadAsDaemon()
     {
-        return this.pointer().asSlice(OFFSET__AttachCurrentThreadAsDaemon, ADDRESS);
+        return this.pointer().asSlice(OFFSET_AttachCurrentThreadAsDaemon, ADDRESS);
     }
 }
