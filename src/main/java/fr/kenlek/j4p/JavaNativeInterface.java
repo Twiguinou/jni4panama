@@ -3,13 +3,13 @@ package fr.kenlek.j4p;
 import module fr.kenlek.jpgen.api;
 import module java.base;
 
-import fr.kenlek.jpgen.api.Buffer;
+import fr.kenlek.jpgen.api.data.Buffer;
 
 import static fr.kenlek.jpgen.api.ForeignUtils.loadLookup;
 import static fr.kenlek.jpgen.api.dynload.DowncallTransformer.PUBLIC_GROUP_TRANSFORMER;
 import static java.lang.foreign.MemorySegment.NULL;
 import static java.lang.foreign.SymbolLookup.libraryLookup;
-import static java.lang.foreign.ValueLayout.*;
+import static java.lang.foreign.ValueLayout.JAVA_INT;
 import static java.lang.invoke.MethodHandles.*;
 import static java.lang.invoke.MethodType.methodType;
 import static java.util.Objects.requireNonNull;
@@ -107,7 +107,7 @@ public interface JavaNativeInterface
 
     static JavaNativeInterface load(SymbolLookup lookup)
     {
-        return NativeProxies.make(JavaNativeInterface.class, new LinkingDispatcher(lookup).and(DOWNCALL_TRANSFORMER));
+        return NativeProxies.make(JavaNativeInterface.class, new LinkingDowncallDispatcher(lookup).and(DOWNCALL_TRANSFORMER));
     }
 
     static JavaNativeInterface load(SymbolLookup jvmLookup, SymbolLookup j4pLookup)
@@ -810,9 +810,9 @@ public interface JavaNativeInterface
         int result;
         try (Arena arena = Arena.ofConfined())
         {
-            MemorySegment pVMs = arena.allocate(ADDRESS, searchBias);
+            Buffer<MemorySegment> pVMs = Buffer.allocateAddresses(arena, JavaVM.LAYOUT, searchBias);
             MemorySegment pVMCount = arena.allocate(JAVA_INT);
-            result = this.GetCreatedJavaVMs(pVMs, searchBias, pVMCount);
+            result = this.GetCreatedJavaVMs(pVMs.pointer(), searchBias, pVMCount);
             if (result != 0)
             {
                 throw new RuntimeException("Failed to query Java VMs: " + result);
@@ -824,12 +824,12 @@ public interface JavaNativeInterface
                 throw new RuntimeException("No Java VM found.");
             }
 
-            MemorySegment pEnv = arena.allocate(ADDRESS);
+            Buffer<MemorySegment> pEnv = Buffer.allocateAddresses(arena, JNIEnv.LAYOUT, 1);
             for (int i = 0; i < vmCount; i++)
             {
-                JavaVM vm = new JavaVM(pVMs.getAtIndex(ADDRESS.withTargetLayout(JavaVM.LAYOUT), i));
+                JavaVM vm = new JavaVM(pVMs.get(i));
 
-                result = this.GetEnv(vm, pEnv, version);
+                result = this.GetEnv(vm, pEnv.pointer(), version);
                 if (result == JNI_EVERSION)
                 {
                     // A thread can only be bound to a single VM
@@ -840,7 +840,7 @@ public interface JavaNativeInterface
                     continue;
                 }
 
-                return new JNIEnv(pEnv.get(ADDRESS.withTargetLayout(JNIEnv.LAYOUT), 0));
+                return new JNIEnv(pEnv.get(0));
             }
 
             throw new RuntimeException("No Java VM could be tied to the current thread.");

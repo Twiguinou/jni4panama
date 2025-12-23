@@ -25,7 +25,6 @@ dependencies {
     implementation("fr.kenlek.jpgen:jpgen-api:0.2.0")
 }
 
-val zig = providers.gradleProperty("${project.name}.zig").getOrElse("zig")
 val zigOut = layout.buildDirectory.dir("zig-out")
 val jniIncludeDirectory = layout.buildDirectory.dir("jni-include")
 
@@ -44,13 +43,12 @@ tasks.register("downloadJNIHeaders") {
 
     doLast {
         for ((uri, relativeLocation, name) in headers) {
+            logger.lifecycle("Downloading $relativeLocation/$name from URI: $uri")
             uri(uri).toURL().openStream().use { input ->
                 val outputFile = jniIncludeDirectory.get().asFile.resolve("$relativeLocation/$name")
                 outputFile.parentFile.mkdirs()
                 outputFile.outputStream().use { output -> input.copyTo(output) }
             }
-
-            logger.lifecycle("Downloaded $relativeLocation/$name from URI: $uri")
         }
     }
 }
@@ -59,7 +57,9 @@ tasks.register<Exec>("compileNatives") {
     group = project.name
     dependsOn("downloadJNIHeaders")
 
-    executable = zig
+    outputs.dir(zigOut)
+
+    executable = providers.gradleProperty("${project.name}.zig").getOrElse("zig")
     args(
         "build", "--prefix", zigOut.get(), "-Doptimize=ReleaseSmall",
         "-DjniInclude=${jniIncludeDirectory.get()}"
@@ -76,7 +76,7 @@ tasks.jar {
 }
 
 tasks.compileJava.configure {
-    options.javaModuleVersion = project.version.toString()
+    options.javaModuleVersion = version.toString()
     options.compilerArgs.addAll(listOf("-Xlint:all,-restricted", "-Werror"))
 }
 
@@ -92,7 +92,7 @@ tasks.withType<JavaExec>().configureEach {
 deployer {
     projectInfo {
         name = "jni4panama"
-        groupId = project.group.toString()
+        groupId = group.toString()
         artifactId = project.name
         url = "http://github.com/Twiguinou/jni4panama"
 
@@ -102,7 +102,7 @@ deployer {
         scm.fromGithub("Twiguinou", "jni4panama")
     }
 
-    release.version = project.version.toString()
+    release.version = version.toString()
     content.component {
         fromJava()
     }
