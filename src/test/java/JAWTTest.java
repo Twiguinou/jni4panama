@@ -34,7 +34,7 @@ public final class JAWTTest
             try (Reference canvasRef = jni.getNativeObject(env, canvas))
             {
                 JAWTDrawingSurface ds = awt.GetDrawingSurface(jawt, env, canvasRef.value);
-                System.out.println(ds.env() + "   " + env);
+                IO.println(ds.env() + "   " + env);
             }
         }
     }

@@ -31,19 +31,15 @@ public record JavaVM(MemorySegment pointer) implements Addressable
         return Buffer.slices(data, LAYOUT, JavaVM::new);
     }
 
-    public static Buffer<JavaVM> allocate(SegmentAllocator allocator, long size)
+    public static Buffer<JavaVM> buffer(SegmentAllocator allocator, long size)
     {
-        return Buffer.allocateSlices(allocator, LAYOUT, size, JavaVM::new);
+        return Buffer.slices(allocator, LAYOUT, size, JavaVM::new);
     }
 
-    public static JavaVM getAtIndex(MemorySegment buffer, long offset, long index)
+    @Override
+    public StructLayout layout()
     {
-        return new JavaVM(buffer.asSlice(LAYOUT.scale(offset, index), LAYOUT));
-    }
-
-    public static void setAtIndex(MemorySegment buffer, long offset, long index, JavaVM value)
-    {
-        MemorySegment.copy(value.pointer(), 0, buffer, LAYOUT.scale(offset, index), LAYOUT.byteSize());
+        return LAYOUT;
     }
 
     public void copyFrom(JavaVM other)

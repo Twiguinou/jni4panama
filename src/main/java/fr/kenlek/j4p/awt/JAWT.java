@@ -47,19 +47,15 @@ public record JAWT(MemorySegment pointer) implements Addressable
         return Buffer.slices(data, LAYOUT, JAWT::new);
     }
 
-    public static Buffer<JAWT> allocate(SegmentAllocator allocator, long size)
+    public static Buffer<JAWT> buffer(SegmentAllocator allocator, long size)
     {
-        return Buffer.allocateSlices(allocator, LAYOUT, size, JAWT::new);
+        return Buffer.slices(allocator, LAYOUT, size, JAWT::new);
     }
 
-    public static JAWT getAtIndex(MemorySegment buffer, long offset, long index)
+    @Override
+    public StructLayout layout()
     {
-        return new JAWT(buffer.asSlice(LAYOUT.scale(offset, index), LAYOUT));
-    }
-
-    public static void setAtIndex(MemorySegment buffer, long offset, long index, JAWT value)
-    {
-        MemorySegment.copy(value.pointer(), 0, buffer, LAYOUT.scale(offset, index), LAYOUT.byteSize());
+        return LAYOUT;
     }
 
     public void copyFrom(JAWT other)

@@ -45,19 +45,15 @@ public record JNIInvokeInterface(MemorySegment pointer) implements Addressable
         return Buffer.slices(data, LAYOUT, JNIInvokeInterface::new);
     }
 
-    public static Buffer<JNIInvokeInterface> allocate(SegmentAllocator allocator, long size)
+    public static Buffer<JNIInvokeInterface> buffer(SegmentAllocator allocator, long size)
     {
-        return Buffer.allocateSlices(allocator, LAYOUT, size, JNIInvokeInterface::new);
+        return Buffer.slices(allocator, LAYOUT, size, JNIInvokeInterface::new);
     }
 
-    public static JNIInvokeInterface getAtIndex(MemorySegment buffer, long offset, long index)
+    @Override
+    public StructLayout layout()
     {
-        return new JNIInvokeInterface(buffer.asSlice(LAYOUT.scale(offset, index), LAYOUT));
-    }
-
-    public static void setAtIndex(MemorySegment buffer, long offset, long index, JNIInvokeInterface value)
-    {
-        MemorySegment.copy(value.pointer(), 0, buffer, LAYOUT.scale(offset, index), LAYOUT.byteSize());
+        return LAYOUT;
     }
 
     public void copyFrom(JNIInvokeInterface other)

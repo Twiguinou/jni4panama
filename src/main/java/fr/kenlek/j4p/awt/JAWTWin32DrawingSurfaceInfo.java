@@ -42,19 +42,15 @@ public record JAWTWin32DrawingSurfaceInfo(MemorySegment pointer) implements Addr
         return Buffer.slices(data, LAYOUT, JAWTWin32DrawingSurfaceInfo::new);
     }
 
-    public static Buffer<JAWTWin32DrawingSurfaceInfo> allocate(SegmentAllocator allocator, long size)
+    public static Buffer<JAWTWin32DrawingSurfaceInfo> buffer(SegmentAllocator allocator, long size)
     {
-        return Buffer.allocateSlices(allocator, LAYOUT, size, JAWTWin32DrawingSurfaceInfo::new);
+        return Buffer.slices(allocator, LAYOUT, size, JAWTWin32DrawingSurfaceInfo::new);
     }
 
-    public static JAWTWin32DrawingSurfaceInfo getAtIndex(MemorySegment buffer, long offset, long index)
+    @Override
+    public StructLayout layout()
     {
-        return new JAWTWin32DrawingSurfaceInfo(buffer.asSlice(LAYOUT.scale(offset, index), LAYOUT));
-    }
-
-    public static void setAtIndex(MemorySegment buffer, long offset, long index, JAWTWin32DrawingSurfaceInfo value)
-    {
-        MemorySegment.copy(value.pointer(), 0, buffer, LAYOUT.scale(offset, index), LAYOUT.byteSize());
+        return LAYOUT;
     }
 
     public void copyFrom(JAWTWin32DrawingSurfaceInfo other)

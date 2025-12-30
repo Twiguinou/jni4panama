@@ -42,19 +42,15 @@ public record JAWTDrawingSurface(MemorySegment pointer) implements Addressable
         return Buffer.slices(data, LAYOUT, JAWTDrawingSurface::new);
     }
 
-    public static Buffer<JAWTDrawingSurface> allocate(SegmentAllocator allocator, long size)
+    public static Buffer<JAWTDrawingSurface> buffer(SegmentAllocator allocator, long size)
     {
-        return Buffer.allocateSlices(allocator, LAYOUT, size, JAWTDrawingSurface::new);
+        return Buffer.slices(allocator, LAYOUT, size, JAWTDrawingSurface::new);
     }
 
-    public static JAWTDrawingSurface getAtIndex(MemorySegment buffer, long offset, long index)
+    @Override
+    public StructLayout layout()
     {
-        return new JAWTDrawingSurface(buffer.asSlice(LAYOUT.scale(offset, index), LAYOUT));
-    }
-
-    public static void setAtIndex(MemorySegment buffer, long offset, long index, JAWTDrawingSurface value)
-    {
-        MemorySegment.copy(value.pointer(), 0, buffer, LAYOUT.scale(offset, index), LAYOUT.byteSize());
+        return LAYOUT;
     }
 
     public void copyFrom(JAWTDrawingSurface other)

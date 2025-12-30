@@ -35,19 +35,15 @@ public record JavaVMAttachArgs(MemorySegment pointer) implements Addressable
         return Buffer.slices(data, LAYOUT, JavaVMAttachArgs::new);
     }
 
-    public static Buffer<JavaVMAttachArgs> allocate(SegmentAllocator allocator, long size)
+    public static Buffer<JavaVMAttachArgs> buffer(SegmentAllocator allocator, long size)
     {
-        return Buffer.allocateSlices(allocator, LAYOUT, size, JavaVMAttachArgs::new);
+        return Buffer.slices(allocator, LAYOUT, size, JavaVMAttachArgs::new);
     }
 
-    public static JavaVMAttachArgs getAtIndex(MemorySegment buffer, long offset, long index)
+    @Override
+    public StructLayout layout()
     {
-        return new JavaVMAttachArgs(buffer.asSlice(LAYOUT.scale(offset, index), LAYOUT));
-    }
-
-    public static void setAtIndex(MemorySegment buffer, long offset, long index, JavaVMAttachArgs value)
-    {
-        MemorySegment.copy(value.pointer(), 0, buffer, LAYOUT.scale(offset, index), LAYOUT.byteSize());
+        return LAYOUT;
     }
 
     public void copyFrom(JavaVMAttachArgs other)

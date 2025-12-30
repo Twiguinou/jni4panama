@@ -33,19 +33,15 @@ public record JavaVMOption(MemorySegment pointer) implements Addressable
         return Buffer.slices(data, LAYOUT, JavaVMOption::new);
     }
 
-    public static Buffer<JavaVMOption> allocate(SegmentAllocator allocator, long size)
+    public static Buffer<JavaVMOption> buffer(SegmentAllocator allocator, long size)
     {
-        return Buffer.allocateSlices(allocator, LAYOUT, size, JavaVMOption::new);
+        return Buffer.slices(allocator, LAYOUT, size, JavaVMOption::new);
     }
 
-    public static JavaVMOption getAtIndex(MemorySegment buffer, long offset, long index)
+    @Override
+    public StructLayout layout()
     {
-        return new JavaVMOption(buffer.asSlice(LAYOUT.scale(offset, index), LAYOUT));
-    }
-
-    public static void setAtIndex(MemorySegment buffer, long offset, long index, JavaVMOption value)
-    {
-        MemorySegment.copy(value.pointer(), 0, buffer, LAYOUT.scale(offset, index), LAYOUT.byteSize());
+        return LAYOUT;
     }
 
     public void copyFrom(JavaVMOption other)

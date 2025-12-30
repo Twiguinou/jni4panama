@@ -501,19 +501,15 @@ public record JNINativeInterface(MemorySegment pointer) implements Addressable
         return Buffer.slices(data, LAYOUT, JNINativeInterface::new);
     }
 
-    public static Buffer<JNINativeInterface> allocate(SegmentAllocator allocator, long size)
+    public static Buffer<JNINativeInterface> buffer(SegmentAllocator allocator, long size)
     {
-        return Buffer.allocateSlices(allocator, LAYOUT, size, JNINativeInterface::new);
+        return Buffer.slices(allocator, LAYOUT, size, JNINativeInterface::new);
     }
 
-    public static JNINativeInterface getAtIndex(MemorySegment buffer, long offset, long index)
+    @Override
+    public StructLayout layout()
     {
-        return new JNINativeInterface(buffer.asSlice(LAYOUT.scale(offset, index), LAYOUT));
-    }
-
-    public static void setAtIndex(MemorySegment buffer, long offset, long index, JNINativeInterface value)
-    {
-        MemorySegment.copy(value.pointer(), 0, buffer, LAYOUT.scale(offset, index), LAYOUT.byteSize());
+        return LAYOUT;
     }
 
     public void copyFrom(JNINativeInterface other)

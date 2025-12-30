@@ -31,19 +31,15 @@ public record JNIEnv(MemorySegment pointer) implements Addressable
         return Buffer.slices(data, LAYOUT, JNIEnv::new);
     }
 
-    public static Buffer<JNIEnv> allocate(SegmentAllocator allocator, long size)
+    public static Buffer<JNIEnv> buffer(SegmentAllocator allocator, long size)
     {
-        return Buffer.allocateSlices(allocator, LAYOUT, size, JNIEnv::new);
+        return Buffer.slices(allocator, LAYOUT, size, JNIEnv::new);
     }
 
-    public static JNIEnv getAtIndex(MemorySegment buffer, long offset, long index)
+    @Override
+    public StructLayout layout()
     {
-        return new JNIEnv(buffer.asSlice(LAYOUT.scale(offset, index), LAYOUT));
-    }
-
-    public static void setAtIndex(MemorySegment buffer, long offset, long index, JNIEnv value)
-    {
-        MemorySegment.copy(value.pointer(), 0, buffer, LAYOUT.scale(offset, index), LAYOUT.byteSize());
+        return LAYOUT;
     }
 
     public void copyFrom(JNIEnv other)

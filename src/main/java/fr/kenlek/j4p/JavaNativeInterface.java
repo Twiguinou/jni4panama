@@ -810,7 +810,7 @@ public interface JavaNativeInterface
         int result;
         try (Arena arena = Arena.ofConfined())
         {
-            Buffer<MemorySegment> pVMs = Buffer.allocateAddresses(arena, JavaVM.LAYOUT, searchBias);
+            Buffer<MemorySegment> pVMs = Buffer.addresses(arena, searchBias, JavaVM.LAYOUT);
             MemorySegment pVMCount = arena.allocate(JAVA_INT);
             result = this.GetCreatedJavaVMs(pVMs.pointer(), searchBias, pVMCount);
             if (result != 0)
@@ -824,7 +824,7 @@ public interface JavaNativeInterface
                 throw new RuntimeException("No Java VM found.");
             }
 
-            Buffer<MemorySegment> pEnv = Buffer.allocateAddresses(arena, JNIEnv.LAYOUT, 1);
+            Buffer<MemorySegment> pEnv = Buffer.addresses(arena, 1, JNIEnv.LAYOUT);
             for (int i = 0; i < vmCount; i++)
             {
                 JavaVM vm = new JavaVM(pVMs.get(i));
@@ -840,7 +840,7 @@ public interface JavaNativeInterface
                     continue;
                 }
 
-                return new JNIEnv(pEnv.get(0));
+                return new JNIEnv(pEnv.getFirst());
             }
 
             throw new RuntimeException("No Java VM could be tied to the current thread.");
@@ -873,7 +873,7 @@ public interface JavaNativeInterface
                 Reference className = this.NewStringUTF(env, arena.allocateFrom(clazz.getName()))
             )
             {
-                Buffer<JValue> args = JValue.allocate(arena, 3);
+                Buffer<JValue> args = JValue.buffer(arena, 3);
                 args.get(0).l(className.value);
                 args.get(1).z(false);
                 args.get(2).l(classLoader.value);
@@ -919,7 +919,7 @@ public interface JavaNativeInterface
 
     default Reference getNativeObject(JNIEnv env, Object object)
     {
-        final class Container
+        class Container
         {
             static Object VALUE;
         }
@@ -936,7 +936,7 @@ public interface JavaNativeInterface
 
     default Object getJavaObject(JNIEnv env, MemorySegment object)
     {
-        final class Container
+        class Container
         {
             static Object VALUE;
         }

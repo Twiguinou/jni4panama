@@ -41,19 +41,15 @@ public record JAWTDrawingSurfaceInfo(MemorySegment pointer) implements Addressab
         return Buffer.slices(data, LAYOUT, JAWTDrawingSurfaceInfo::new);
     }
 
-    public static Buffer<JAWTDrawingSurfaceInfo> allocate(SegmentAllocator allocator, long size)
+    public static Buffer<JAWTDrawingSurfaceInfo> buffer(SegmentAllocator allocator, long size)
     {
-        return Buffer.allocateSlices(allocator, LAYOUT, size, JAWTDrawingSurfaceInfo::new);
+        return Buffer.slices(allocator, LAYOUT, size, JAWTDrawingSurfaceInfo::new);
     }
 
-    public static JAWTDrawingSurfaceInfo getAtIndex(MemorySegment buffer, long offset, long index)
+    @Override
+    public StructLayout layout()
     {
-        return new JAWTDrawingSurfaceInfo(buffer.asSlice(LAYOUT.scale(offset, index), LAYOUT));
-    }
-
-    public static void setAtIndex(MemorySegment buffer, long offset, long index, JAWTDrawingSurfaceInfo value)
-    {
-        MemorySegment.copy(value.pointer(), 0, buffer, LAYOUT.scale(offset, index), LAYOUT.byteSize());
+        return LAYOUT;
     }
 
     public void copyFrom(JAWTDrawingSurfaceInfo other)

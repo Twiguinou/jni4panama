@@ -37,19 +37,15 @@ public record JAWTRectangle(MemorySegment pointer) implements Addressable
         return Buffer.slices(data, LAYOUT, JAWTRectangle::new);
     }
 
-    public static Buffer<JAWTRectangle> allocate(SegmentAllocator allocator, long size)
+    public static Buffer<JAWTRectangle> buffer(SegmentAllocator allocator, long size)
     {
-        return Buffer.allocateSlices(allocator, LAYOUT, size, JAWTRectangle::new);
+        return Buffer.slices(allocator, LAYOUT, size, JAWTRectangle::new);
     }
 
-    public static JAWTRectangle getAtIndex(MemorySegment buffer, long offset, long index)
+    @Override
+    public StructLayout layout()
     {
-        return new JAWTRectangle(buffer.asSlice(LAYOUT.scale(offset, index), LAYOUT));
-    }
-
-    public static void setAtIndex(MemorySegment buffer, long offset, long index, JAWTRectangle value)
-    {
-        MemorySegment.copy(value.pointer(), 0, buffer, LAYOUT.scale(offset, index), LAYOUT.byteSize());
+        return LAYOUT;
     }
 
     public void copyFrom(JAWTRectangle other)

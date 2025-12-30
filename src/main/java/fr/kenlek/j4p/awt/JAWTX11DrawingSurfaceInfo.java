@@ -12,10 +12,10 @@ import static java.lang.foreign.ValueLayout.*;
 public record JAWTX11DrawingSurfaceInfo(MemorySegment pointer) implements Addressable
 {
     public static final StructLayout LAYOUT = makeStructLayout(
-        CUnsignedLong.LAYOUT.withName("drawable"),
+        CLong.LAYOUT.withName("drawable"),
         ADDRESS.withName("display"),
-        CUnsignedLong.LAYOUT.withName("visualID"),
-        CUnsignedLong.LAYOUT.withName("colormapID"),
+        CLong.LAYOUT.withName("visualID"),
+        CLong.LAYOUT.withName("colormapID"),
         JAVA_INT.withName("depth"),
         ADDRESS.withName("GetAWTColor")
     ).withName("JAWT_X11DrawingSurfaceInfo");
@@ -41,19 +41,15 @@ public record JAWTX11DrawingSurfaceInfo(MemorySegment pointer) implements Addres
         return Buffer.slices(data, LAYOUT, JAWTX11DrawingSurfaceInfo::new);
     }
 
-    public static Buffer<JAWTX11DrawingSurfaceInfo> allocate(SegmentAllocator allocator, long size)
+    public static Buffer<JAWTX11DrawingSurfaceInfo> buffer(SegmentAllocator allocator, long size)
     {
-        return Buffer.allocateSlices(allocator, LAYOUT, size, JAWTX11DrawingSurfaceInfo::new);
+        return Buffer.slices(allocator, LAYOUT, size, JAWTX11DrawingSurfaceInfo::new);
     }
 
-    public static JAWTX11DrawingSurfaceInfo getAtIndex(MemorySegment buffer, long offset, long index)
+    @Override
+    public StructLayout layout()
     {
-        return new JAWTX11DrawingSurfaceInfo(buffer.asSlice(LAYOUT.scale(offset, index), LAYOUT));
-    }
-
-    public static void setAtIndex(MemorySegment buffer, long offset, long index, JAWTX11DrawingSurfaceInfo value)
-    {
-        MemorySegment.copy(value.pointer(), 0, buffer, LAYOUT.scale(offset, index), LAYOUT.byteSize());
+        return LAYOUT;
     }
 
     public void copyFrom(JAWTX11DrawingSurfaceInfo other)
@@ -63,15 +59,15 @@ public record JAWTX11DrawingSurfaceInfo(MemorySegment pointer) implements Addres
 
     public MemorySegment $drawable()
     {
-        return this.pointer().asSlice(OFFSET_drawable, CUnsignedLong.LAYOUT);
+        return this.pointer().asSlice(OFFSET_drawable, CLong.LAYOUT);
     }
 
-    public CUnsignedLong drawable()
+    public CLong drawable()
     {
-        return CUnsignedLong.wrap(this.$drawable());
+        return CLong.wrap(this.$drawable());
     }
 
-    public void drawable(CUnsignedLong value)
+    public void drawable(CLong value)
     {
         value.unwrap(this.$drawable());
     }
@@ -93,30 +89,30 @@ public record JAWTX11DrawingSurfaceInfo(MemorySegment pointer) implements Addres
 
     public MemorySegment $visualID()
     {
-        return this.pointer().asSlice(OFFSET_visualID, CUnsignedLong.LAYOUT);
+        return this.pointer().asSlice(OFFSET_visualID, CLong.LAYOUT);
     }
 
-    public CUnsignedLong visualID()
+    public CLong visualID()
     {
-        return CUnsignedLong.wrap(this.$visualID());
+        return CLong.wrap(this.$visualID());
     }
 
-    public void visualID(CUnsignedLong value)
+    public void visualID(CLong value)
     {
         value.unwrap(this.$visualID());
     }
 
     public MemorySegment $colormapID()
     {
-        return this.pointer().asSlice(OFFSET_colormapID, CUnsignedLong.LAYOUT);
+        return this.pointer().asSlice(OFFSET_colormapID, CLong.LAYOUT);
     }
 
-    public CUnsignedLong colormapID()
+    public CLong colormapID()
     {
-        return CUnsignedLong.wrap(this.$colormapID());
+        return CLong.wrap(this.$colormapID());
     }
 
-    public void colormapID(CUnsignedLong value)
+    public void colormapID(CLong value)
     {
         value.unwrap(this.$colormapID());
     }

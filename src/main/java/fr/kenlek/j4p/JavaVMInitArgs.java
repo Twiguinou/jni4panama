@@ -38,19 +38,15 @@ public record JavaVMInitArgs(MemorySegment pointer) implements Addressable
         return Buffer.slices(data, LAYOUT, JavaVMInitArgs::new);
     }
 
-    public static Buffer<JavaVMInitArgs> allocate(SegmentAllocator allocator, long size)
+    public static Buffer<JavaVMInitArgs> buffer(SegmentAllocator allocator, long size)
     {
-        return Buffer.allocateSlices(allocator, LAYOUT, size, JavaVMInitArgs::new);
+        return Buffer.slices(allocator, LAYOUT, size, JavaVMInitArgs::new);
     }
 
-    public static JavaVMInitArgs getAtIndex(MemorySegment buffer, long offset, long index)
+    @Override
+    public StructLayout layout()
     {
-        return new JavaVMInitArgs(buffer.asSlice(LAYOUT.scale(offset, index), LAYOUT));
-    }
-
-    public static void setAtIndex(MemorySegment buffer, long offset, long index, JavaVMInitArgs value)
-    {
-        MemorySegment.copy(value.pointer(), 0, buffer, LAYOUT.scale(offset, index), LAYOUT.byteSize());
+        return LAYOUT;
     }
 
     public void copyFrom(JavaVMInitArgs other)
@@ -101,9 +97,9 @@ public record JavaVMInitArgs(MemorySegment pointer) implements Addressable
         consumer.accept(this.options());
     }
 
-    public void options(Buffer<JavaVMOption> value)
+    public void options(MemorySegment value)
     {
-        this.pointer().set(ADDRESS, OFFSET_options, value.pointer());
+        this.pointer().set(ADDRESS, OFFSET_options, value);
     }
 
     public MemorySegment $options()

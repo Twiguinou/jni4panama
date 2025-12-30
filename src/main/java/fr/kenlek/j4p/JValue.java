@@ -47,19 +47,15 @@ public record JValue(MemorySegment pointer) implements Addressable
         return Buffer.slices(data, LAYOUT, JValue::new);
     }
 
-    public static Buffer<JValue> allocate(SegmentAllocator allocator, long size)
+    public static Buffer<JValue> buffer(SegmentAllocator allocator, long size)
     {
-        return Buffer.allocateSlices(allocator, LAYOUT, size, JValue::new);
+        return Buffer.slices(allocator, LAYOUT, size, JValue::new);
     }
 
-    public static JValue getAtIndex(MemorySegment buffer, long offset, long index)
+    @Override
+    public UnionLayout layout()
     {
-        return new JValue(buffer.asSlice(LAYOUT.scale(offset, index), LAYOUT));
-    }
-
-    public static void setAtIndex(MemorySegment buffer, long offset, long index, JValue value)
-    {
-        MemorySegment.copy(value.pointer(), 0, buffer, LAYOUT.scale(offset, index), LAYOUT.byteSize());
+        return LAYOUT;
     }
 
     public void copyFrom(JValue other)

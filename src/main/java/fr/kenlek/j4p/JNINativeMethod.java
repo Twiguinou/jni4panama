@@ -35,19 +35,15 @@ public record JNINativeMethod(MemorySegment pointer) implements Addressable
         return Buffer.slices(data, LAYOUT, JNINativeMethod::new);
     }
 
-    public static Buffer<JNINativeMethod> allocate(SegmentAllocator allocator, long size)
+    public static Buffer<JNINativeMethod> buffer(SegmentAllocator allocator, long size)
     {
-        return Buffer.allocateSlices(allocator, LAYOUT, size, JNINativeMethod::new);
+        return Buffer.slices(allocator, LAYOUT, size, JNINativeMethod::new);
     }
 
-    public static JNINativeMethod getAtIndex(MemorySegment buffer, long offset, long index)
+    @Override
+    public StructLayout layout()
     {
-        return new JNINativeMethod(buffer.asSlice(LAYOUT.scale(offset, index), LAYOUT));
-    }
-
-    public static void setAtIndex(MemorySegment buffer, long offset, long index, JNINativeMethod value)
-    {
-        MemorySegment.copy(value.pointer(), 0, buffer, LAYOUT.scale(offset, index), LAYOUT.byteSize());
+        return LAYOUT;
     }
 
     public void copyFrom(JNINativeMethod other)
