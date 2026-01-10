@@ -107,7 +107,7 @@ public interface JavaNativeInterface
 
     static JavaNativeInterface load(SymbolLookup lookup)
     {
-        return NativeProxies.make(JavaNativeInterface.class, new LinkingDowncallDispatcher(lookup).and(DOWNCALL_TRANSFORMER));
+        return NativeProxies.make(MethodHandles.lookup(), JavaNativeInterface.class, new LinkingDowncallDispatcher(lookup).and(DOWNCALL_TRANSFORMER));
     }
 
     static JavaNativeInterface load(SymbolLookup jvmLookup, SymbolLookup j4pLookup)

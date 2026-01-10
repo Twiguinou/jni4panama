@@ -47,7 +47,7 @@ public interface AWTNativeInterface
 
     static AWTNativeInterface load(SymbolLookup lookup)
     {
-        return NativeProxies.make(AWTNativeInterface.class, new LinkingDowncallDispatcher(lookup).and(DOWNCALL_TRANSFORMER));
+        return NativeProxies.make(MethodHandles.lookup(), AWTNativeInterface.class, new LinkingDowncallDispatcher(lookup).and(DOWNCALL_TRANSFORMER));
     }
 
     static AWTNativeInterface load(SymbolLookup jawtLookup, SymbolLookup j4pLookup)
