@@ -59,14 +59,14 @@ pub fn build(b: *std.Build) !void {
         });
 
         if (maybeJNIInclude) |jniInclude| {
-            libj4p.addIncludePath(jniInclude);
-            libj4p.addIncludePath(jniInclude.path(b, switch (target.result.os.tag) {
+            libj4p.root_module.addIncludePath(jniInclude);
+            libj4p.root_module.addIncludePath(jniInclude.path(b, switch (target.result.os.tag) {
                 .windows => "windows",
                 else => "unix"
             }));
         }
 
-        libj4p.addCSourceFiles(.{
+        libj4p.root_module.addCSourceFiles(.{
             .root = b.path("src/main/c"),
             .files = &.{
                 "j4p_jni.c",

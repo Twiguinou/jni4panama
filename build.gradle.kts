@@ -2,18 +2,18 @@ import fr.kenlek.jpgen.api.Platform
 
 plugins {
     `java-library`
-    id("io.deepmedia.tools.deployer") version "0.18.0"
+    alias(libs.plugins.mavenPublish)
 }
 
 group = "fr.kenlek"
 version = "1.1.0"
+description = "Bindings for the JNI Invocation API via Java 22's FFM API"
 
 java {
     sourceCompatibility = JavaVersion.VERSION_25
     targetCompatibility = JavaVersion.VERSION_25
 
     withSourcesJar()
-    withJavadocJar()
 }
 
 repositories {
@@ -22,11 +22,11 @@ repositories {
 }
 
 dependencies {
-    implementation("fr.kenlek.jpgen:jpgen-api:0.2.0")
+    implementation(libs.jpgen.api)
 }
 
-val zigOut = layout.buildDirectory.dir("zig-out")
-val jniIncludeDirectory = layout.buildDirectory.dir("jni-include")
+val zigOut: Provider<Directory> = layout.buildDirectory.dir("zig-out")
+val jniIncludeDirectory: Provider<Directory> = layout.buildDirectory.dir("jni-include")
 
 tasks.register("downloadJNIHeaders") {
     group = project.name
@@ -57,6 +57,8 @@ tasks.register<Exec>("compileNatives") {
     group = project.name
     dependsOn("downloadJNIHeaders")
 
+    inputs.file("build.zig")
+    inputs.dir("src/main/c")
     outputs.dir(zigOut)
 
     executable = providers.gradleProperty("${project.name}.zig").getOrElse("zig")
@@ -89,42 +91,34 @@ tasks.withType<JavaExec>().configureEach {
     ).file(System.mapLibraryName("${project.name}-${Platform.CURRENT.code()}")))
 }
 
-deployer {
-    projectInfo {
-        name = "jni4panama"
-        groupId = group.toString()
-        artifactId = project.name
-        url = "http://github.com/Twiguinou/jni4panama"
-
+mavenPublishing {
+    coordinates(group.toString(), name, version.toString())
+    pom {
+        name = project.name
         description = project.description
-        license(apache2)
-        developer("kenlek", "akushiru@kenlek.fr")
-        scm.fromGithub("Twiguinou", "jni4panama")
-    }
+        url = "https://github.com/Twiguinou/jni4panama"
+        developers {
+            developer {
+                name = "kenlek"
+                email = "akushiru@kenlek.fr"
+                url = "https://github.com/Twiguinou"
+            }
+        }
 
-    release.version = version.toString()
-    content.component {
-        fromJava()
-    }
+        licenses {
+            license {
+                name = "Apache-2.0"
+                url = "https://www.apache.org/licenses/LICENSE-2.0.txt"
+            }
+        }
 
-    localSpec {
-        signing {
-            key = absent()
-            password = absent()
+        scm {
+            connection = "scm:git:git://github.com/Twiguinou/jni4panama.git"
+            developerConnection = "scm:git:ssh://github.com:Twiguinou/jni4panama.git"
+            url = "https://github.com/Twiguinou/jni4panama/tree/master"
         }
     }
 
-    centralPortalSpec {
-        auth {
-            user = secret("CENTRAL_PORTAL_USER")
-            password = secret("CENTRAL_PORTAL_PASSWORD")
-        }
-
-        signing {
-            key = secret("SIGNING_KEY")
-            password = secret("SIGNING_PASSWORD")
-        }
-
-        allowMavenCentralSync = false
-    }
+    publishToMavenCentral()
+    signAllPublications()
 }
