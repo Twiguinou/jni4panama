@@ -6,7 +6,7 @@ plugins {
 }
 
 group = "fr.kenlek"
-version = "1.1.0"
+version = "1.1.1"
 description = "Bindings for the JNI Invocation API via Java 22's FFM API"
 
 java {
@@ -22,7 +22,7 @@ repositories {
 }
 
 dependencies {
-    implementation(libs.jpgen.api)
+    api(libs.jpgen.api)
 }
 
 val zigOut: Provider<Directory> = layout.buildDirectory.dir("zig-out")
