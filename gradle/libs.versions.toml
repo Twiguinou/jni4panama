@@ -1,5 +1,5 @@
 [versions]
-jpgen-api = "0.2.1"
+jpgen-api = "0.2.2"
 
 [libraries]
 jpgen-api = { group = "fr.kenlek.jpgen", name = "jpgen-api", version.ref = "jpgen-api" }

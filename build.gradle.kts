@@ -6,7 +6,7 @@ plugins {
 }
 
 group = "fr.kenlek"
-version = "1.1.1"
+version = "1.1.2"
 description = "Bindings for the JNI Invocation API via Java 22's FFM API"
 
 java {
