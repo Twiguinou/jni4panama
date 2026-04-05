@@ -6,11 +6,12 @@ import module java.base;
 import fr.kenlek.jpgen.api.data.Buffer;
 
 import static fr.kenlek.jpgen.api.ForeignUtils.loadLookup;
-import static fr.kenlek.jpgen.api.dynload.DowncallTransformer.PUBLIC_GROUP_TRANSFORMER;
+import static fr.kenlek.jpgen.api.Host.ALL_TARGETS;
+import static fr.kenlek.jpgen.api.Platform.OS.WINDOWS;
 import static java.lang.foreign.MemorySegment.NULL;
 import static java.lang.foreign.SymbolLookup.libraryLookup;
 import static java.lang.foreign.ValueLayout.JAVA_INT;
-import static java.lang.invoke.MethodHandles.*;
+import static java.lang.invoke.MethodHandles.publicLookup;
 import static java.lang.invoke.MethodType.methodType;
 import static java.util.Objects.requireNonNull;
 
@@ -22,7 +23,7 @@ public interface JavaNativeInterface
 {
     DowncallTransformer DOWNCALL_TRANSFORMER = makeCallArranger(JNIEnv.class, JNINativeInterface.class)
         .and(makeCallArranger(JavaVM.class, JNIInvokeInterface.class))
-        .and(PUBLIC_GROUP_TRANSFORMER);
+        .and(DowncallTransformer.PUBLIC_GROUP_TRANSFORMER);
 
     int JNI_OK = 0;
     int JNI_ERR = -1;
@@ -51,8 +52,8 @@ public interface JavaNativeInterface
     {
         String javaHome = requireNonNull(System.getProperty("java.home"), "Unable to resolve java.home system property.");
         Path sharedLibrariesDirectory = Path.of(javaHome).resolve(Host.select(
-            Platform.OS.WINDOWS.value("bin"),
-            Host.ALL_TARGETS.value("lib")
+            WINDOWS.value("bin"),
+            ALL_TARGETS.value("lib")
         ));
         return libraryLookup(sharedLibrariesDirectory.resolve("server", System.mapLibraryName("jvm")), arena);
     }
@@ -83,19 +84,18 @@ public interface JavaNativeInterface
     {
         return DowncallTransformer.filter((method, handle) ->
         {
-            MethodHandles.Lookup lookup = publicLookup();
             MethodType MT_MemorySegment = methodType(MemorySegment.class);
-
+            MethodHandles.Lookup lookup = publicLookup();
             try
             {
                 // handle is R(MemorySegment,MemorySegment,...)
-                handle = filterArguments(handle, 0, lookup.findVirtual(functionsType, method.getName(), MT_MemorySegment));
+                handle = MethodHandles.filterArguments(handle, 0, lookup.findVirtual(functionsType, method.getName(), MT_MemorySegment));
                 // handle is R(JNINativeInterface or JNIInvokeInterface,MemorySegment,...)
-                handle = filterArguments(handle, 0, lookup.findVirtual(handleType, "functions", methodType(functionsType)));
+                handle = MethodHandles.filterArguments(handle, 0, lookup.findVirtual(handleType, "functions", methodType(functionsType)));
                 // handle is R(JNIEnv or JavaVM,MemorySegment,...)
-                handle = filterArguments(handle, 1, lookup.findVirtual(handleType, "pointer", MT_MemorySegment));
+                handle = MethodHandles.filterArguments(handle, 1, lookup.findVirtual(handleType, "pointer", MT_MemorySegment));
                 // handle is R(JNIEnv or JavaVM,JNIEnv or JavaVM,...)
-                return foldArguments(handle, identity(handleType));
+                return MethodHandles.foldArguments(handle, MethodHandles.identity(handleType));
                 // we return R(JNIEnv or JavaVM,...)
             }
             catch (NoSuchMethodException | IllegalAccessException e)

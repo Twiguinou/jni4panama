@@ -6,12 +6,12 @@ plugins {
 }
 
 group = "fr.kenlek"
-version = "1.1.2"
+version = "1.1.3"
 description = "Bindings for the JNI Invocation API via Java 22's FFM API"
 
 java {
-    sourceCompatibility = JavaVersion.VERSION_25
-    targetCompatibility = JavaVersion.VERSION_25
+    sourceCompatibility = JavaVersion.VERSION_26
+    targetCompatibility = JavaVersion.VERSION_26
 
     withSourcesJar()
 }

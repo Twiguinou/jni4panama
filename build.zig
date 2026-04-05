@@ -26,18 +26,20 @@ pub fn build(b: *std.Build) !void {
         .{ .cpu_arch = .aarch64, .os_tag = .macos },
 
         .{ .cpu_arch = .x86_64, .os_tag = .freebsd },
+        .{ .cpu_arch = .x86, .os_tag = .freebsd },
         .{ .cpu_arch = .aarch64, .os_tag = .freebsd },
         .{ .cpu_arch = .arm, .os_tag = .freebsd },
-        .{ .cpu_arch = .riscv64, .os_tag = .freebsd },
         .{ .cpu_arch = .powerpc64, .os_tag = .freebsd },
         .{ .cpu_arch = .powerpc64le, .os_tag = .freebsd },
+        .{ .cpu_arch = .riscv64, .os_tag = .freebsd },
 
         .{ .cpu_arch = .x86_64, .os_tag = .netbsd },
+        .{ .cpu_arch = .x86, .os_tag = .netbsd },
         .{ .cpu_arch = .aarch64, .os_tag = .netbsd },
         .{ .cpu_arch = .arm, .os_tag = .netbsd },
-        .{ .cpu_arch = .powerpc, .os_tag = .netbsd },
         .{ .cpu_arch = .mips, .os_tag = .netbsd },
-        .{ .cpu_arch = .mipsel, .os_tag = .netbsd }
+        .{ .cpu_arch = .mipsel, .os_tag = .netbsd },
+        .{ .cpu_arch = .powerpc, .os_tag = .netbsd }
     };
 
     const optimize = b.standardOptimizeOption(.{});
@@ -55,7 +57,8 @@ pub fn build(b: *std.Build) !void {
                 .target = target,
                 .optimize = optimize,
                 .link_libc = true
-            })
+            }),
+            .version = .{ .major = 1, .minor = 1, .patch = 3 }
         });
 
         if (maybeJNIInclude) |jniInclude| {

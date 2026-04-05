@@ -1,10 +1,10 @@
 [versions]
-jpgen-api = "0.2.2"
+jpgen = "0.2.3"
 
 [libraries]
-jpgen-api = { group = "fr.kenlek.jpgen", name = "jpgen-api", version.ref = "jpgen-api" }
+jpgen-api = { group = "fr.kenlek.jpgen", name = "jpgen-api", version.ref = "jpgen" }
 
-plugindep-jpgen-api = { group = "fr.kenlek.jpgen", name = "jpgen-api", version.ref = "jpgen-api" }
+plugindep-jpgen-api = { group = "fr.kenlek.jpgen", name = "jpgen-api", version.ref = "jpgen" }
 
 [plugins]
 mavenPublish = { id = "com.vanniktech.maven.publish", version = "0.36.0" }

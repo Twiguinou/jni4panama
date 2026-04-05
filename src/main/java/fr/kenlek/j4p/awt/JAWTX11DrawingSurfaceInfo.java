@@ -64,7 +64,7 @@ public record JAWTX11DrawingSurfaceInfo(MemorySegment pointer) implements Addres
 
     public CLong drawable()
     {
-        return CLong.wrap(this.$drawable());
+        return new CLong(this.$drawable());
     }
 
     public void drawable(CLong value)
@@ -94,7 +94,7 @@ public record JAWTX11DrawingSurfaceInfo(MemorySegment pointer) implements Addres
 
     public CLong visualID()
     {
-        return CLong.wrap(this.$visualID());
+        return new CLong(this.$visualID());
     }
 
     public void visualID(CLong value)
@@ -109,7 +109,7 @@ public record JAWTX11DrawingSurfaceInfo(MemorySegment pointer) implements Addres
 
     public CLong colormapID()
     {
-        return CLong.wrap(this.$colormapID());
+        return new CLong(this.$colormapID());
     }
 
     public void colormapID(CLong value)
